@@ -1,0 +1,1 @@
+export const BASIC_TIME_INTERVAL = 30 * 60 * 1000;

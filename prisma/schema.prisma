@@ -1,0 +1,217 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["strictUndefinedChecks"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum AdminLevel {
+  SUPER
+  SUB
+}
+
+enum permitStatus {
+  PENDING
+  ACCEPTED
+  DENIED
+}
+
+model Member {
+  memberId Int @id @default(autoincrement())
+
+  email            String  @unique //이메일
+  password         String
+  name             String
+  nickname         String?
+  enrollmentNumber String
+
+  clubId         Int?
+  club           Club?            @relation(fields: [clubId], references: [clubId], onDelete: SetNull)
+  roleAssignment RoleAssignment[] //동아리내 역할군군
+  adminLevel     AdminLevel?
+
+  profileImageUrl String?
+  instagramUrl    String?
+  blogUrl         String?
+
+  pushEnable        Boolean @default(false)
+  notificationToken String?
+
+  notifications Notification[]
+
+  createReservations     Reservation[] @relation("Creator") //생성한 예약
+  participateReservation Reservation[] @relation("Participator") //참가하는 예약
+
+  createSessions    Session[]    @relation("Creator") //생성한 세션
+  attendanedSession Attendance[] //세선 출석 목록
+
+  isPermmited permitStatus @default(PENDING) // 화이트 리스트 허가 여부
+}
+
+model Club {
+  clubId     Int          @id
+  clubName   String
+  profileImageUrl String?
+  // 관리자와 리더 필드
+  members    Member[]
+  Instrument Instrument[]
+
+  RoleAssignment RoleAssignment[]
+}
+
+enum Role {
+  LEADER
+  SANGSOE
+  SANGJANGGU
+  SUBUK
+  SUBUGGU
+}
+
+model RoleAssignment {
+  roleAssignmentId Int @id @default(autoincrement())
+  clubId           Int
+  memberId         Int
+
+  club   Club   @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
+  role   Role
+  member Member @relation(fields: [memberId], references: [memberId], onDelete: Cascade)
+
+  @@unique([clubId, role]) // 같은 역할에 중복 배정 방지
+}
+
+enum instrumentType {
+  KWANGGWARI
+  JING
+  JANGGU
+  BUK
+  SOGO
+  ELSE
+}
+
+model Instrument {
+  instrumentId    Int            @id @default(autoincrement())
+  instrumentType  instrumentType
+  clubId          Int
+  club            Club           @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
+  name            String
+  imageUrl        String?
+  borrowAvailable Boolean
+
+  borrowHistory Session[]
+  Reservation   Reservation[]
+
+  @@index([clubId], map: "instuments_club_fkey")
+}
+
+enum sessionType {
+  RESERVED
+  REALTIME
+}
+
+model Session {
+  sessionId Int @id @default(autoincrement())
+
+  date      DateTime @db.Date
+  startTime DateTime @db.Time(0)
+  endTime   DateTime @db.Time(0)
+
+  title String
+
+  forceEnd    Boolean
+  extendCount Int     @default(0)
+
+  creatorId           Int? // 회원 생성자 (nullable)
+  externalCreatorName String? // 외부인 이름 (nullable)
+  creator             Member? @relation("Creator", fields: [creatorId], references: [memberId], onDelete: SetNull)
+
+  participationAvailable Boolean @default(true)
+
+  sessionType sessionType
+
+  reservationId   Int?             @unique
+  reservation     Reservation?     @relation(fields: [reservationId], references: [reservationId])
+  reservationType reservationType?
+
+  returnImageUrl Json?
+
+  borrowInstruments Instrument[]
+  attendanceList    Attendance[]
+}
+
+enum reservationType {
+  REGULAR //정규 연습
+  COMMON //
+  EXTERNAL
+}
+
+model Reservation {
+  reservationId Int @id @default(autoincrement())
+
+  date      DateTime @db.Date
+  startTime DateTime @db.Time(0)
+  endTime   DateTime @db.Time(0)
+  title     String
+
+  reservationType        reservationType
+  participationAvailable Boolean         @default(true)
+
+  creatorId           Int? // 회원 생성자 (nullable)
+  creator             Member? @relation("Creator", fields: [creatorId], references: [memberId], onDelete: SetNull)
+  externalCreatorName String? // 외부인 이름 (nullable)
+
+  participators     Member[]     @relation("Participator")
+  borrowInstruments Instrument[]
+
+  session Session? //세션이 수행되면 세션 표시
+
+  @@index([date], name: "date_index")
+}
+
+model Attendance {
+  attendanceId Int      @id @default(autoincrement())
+  sessionId    Int
+  memberId     Int?
+  member       Member?  @relation(fields: [memberId], references: [memberId], onDelete: SetNull)
+  status       String // "출석", "지각", "결석" 등의 상태 저장 저장시에 확인인
+  session      Session  @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  timeStamp    DateTime @db.Timestamp(0)
+}
+
+model Banner {
+  bannerId     Int      @id @default(autoincrement())
+  owner        String
+  bannerImgUrl String
+  href         String?
+  startDate    DateTime @db.Date
+  endDate      DateTime @db.Date
+}
+
+model Notification {
+  notificationId Int      @id @default(autoincrement())
+  memberId       Int
+  timestamp      DateTime @default(now())
+  isRead         Boolean  @default(false)
+  data           Json
+
+  member Member @relation(fields: [memberId], references: [memberId], onDelete: Cascade)
+
+  @@index([memberId]) // Index for memberId for better performance
+}
+
+model Notice {
+  noticeId  Int      @id @default(autoincrement())
+  channel   Int?
+  title     String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
