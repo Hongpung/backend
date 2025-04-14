@@ -1,99 +1,97 @@
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <a href="https://green-bath-cc7.notion.site/1b62749b6fda80c69245f995bab2e031" target="blank"><img src="https://file.notion.so/f/f/92794d22-9384-4f79-8c0c-67377d1489bd/cdd65839-0757-413a-9568-22cc8825a8a0/image.png?table=block&id=1b62749b-6fda-8055-b4d8-cacbaf3aa403&spaceId=92794d22-9384-4f79-8c0c-67377d1489bd&expirationTimestamp=1744675200000&signature=NsXBWkJ1H45BO-YuG8WgMQSKvWjY9TAQFsKH_LEXLUM&downloadName=image.png" height="240" alt="Nest Logo" /></a>
 </p>
 
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+<br/>
+      
+## 홍풍<a href="https://green-bath-cc7.notion.site/1b62749b6fda80c69245f995bab2e031" target="blank"><img src="https://play-lh.googleusercontent.com/tJ84QKArlyPTyavYnR6AJQgx6dyWk36KBHJxIMb9FmaukdoYkCYELypP83-qlU3JzQ=w480-h960-rw" align=left width=100></a>
+홍익대학교 풍물패연합 연습실 예약 어플리케이션, 홍풍 **백 엔드** 저장소
 
-## Description
+<br/><br/>
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-## Project setup
+## 사용스택
 
-```bash
-$ npm install
+<img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=NestJS&logoColor=white"> <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=MySQL&logoColor=white"> <img src="https://img.shields.io/badge/prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white"> 
+ <br/>
+<img src="https://img.shields.io/badge/redis-FF4438?style=for-the-badge&logo=Redis&logoColor=white"> <img src="https://img.shields.io/badge/jsonwebtokens-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white"> 
+<br/>
+<img src="https://img.shields.io/badge/amazonaws-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white"> <img src="https://img.shields.io/badge/CloudFlare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white">
+
+
+## Project Structure
+
 ```
+hongpung_backend/
+├── src/ # 소스 코드 디렉토리
+│ ├── admin/ # 관리자 관련 기능
+│ ├── auth/ # 인증 관련 기능
+│ ├── banners/ # 배너 관리 기능
+│ ├── club/ # 클럽 관련 기능
+│ ├── decorators/ # 커스텀 데코레이터
+│ ├── firebase/ # Firebase 연동
+│ ├── guards/ # 인증 가드
+│ ├── instrument/ # 악기 관리 기능
+│ ├── mail/ # 이메일 전송 기능
+│ ├── member/ # 회원 관리 기능
+│ ├── notice/ # 공지사항 관리
+│ ├── notification/ # 푸시 알림 기능
+│ ├── reservation/ # 예약 관리 기능
+│ ├── role/ # 역할 관리
+│ ├── session/ # 세션 관리
+│ ├── types/ # express Request Declare (jwt 사용)
+│ ├── upload-s3/ # S3 업로드 기능
+│ ├── verification/ # 이메일 검증 기능
+│ ├── app.controller.ts # 메인 컨트롤러
+│ ├── app.module.ts # 메인 모듈
+│ ├── app.service.ts # 메인 서비스
+│ ├── main.ts # 애플리케이션 진입점
+│ └── prisma.service.ts # Prisma 서비스
+│
+├── prisma/ # 데이터베이스 관련
+  └── schema.prisma # Prisma 스키마
 
-## Compile and run the project
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
 ```
+## 주요 기능 설명
 
-## Run tests
+### 1. 인증 및 보안
 
-```bash
-# unit tests
-$ npm run test
+- `auth/`: JWT 기반 인증 시스템
+- `guards/`: 다양한 인증 가드 (Admin, Auth, WsAuth 등)
+- `verification/`: 이메일 검증 시스템
 
-# e2e tests
-$ npm run test:e2e
+### 2. 데이터 관리
 
-# test coverage
-$ npm run test:cov
-```
+- `prisma/`: Prisma ORM을 사용한 데이터베이스 관리
+- `member/`: 회원 정보 관리
+- `admin/`: 관리자 기능
 
-## Deployment
+### 3. 기능 모듈
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- `club/`: 클럽 관리
+- `notice/`: 공지사항
+- `reservation/`: 예약 시스템
+- `notification/`: 푸시 알림
+- `banners/`: 배너 관리
+- `instrument/`: 악기 관리
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 4. 유틸리티
 
-```bash
-$ npm install -g mau
-$ mau deploy
-```
+- `upload-s3/`: AWS S3 파일 업로드
+- `firebase/`: Firebase 연동
+- `mail/`: 이메일 전송
+- `session/`: 세션 관리
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 5. 설정 파일
 
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- `.env`: 환경 변수 (보안상 gitignore됨)
+- `prisma/schema.prisma`: 데이터베이스 스키마
+- `tsconfig.json`: TypeScript 설정
+- 
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+홍풍 is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
