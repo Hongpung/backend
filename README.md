@@ -92,6 +92,5 @@ hongpung_backend/
 - `tsconfig.json`: TypeScript 설정
 - 
 
-## License
-
-홍풍 is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 개발자
+<a href="https://github.com/Wide-Pants"> 강윤호@wide-pants</a>
