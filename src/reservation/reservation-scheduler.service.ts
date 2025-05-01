@@ -6,8 +6,7 @@ import { PrismaService } from 'src/prisma.service';
 import { timeFormmatForClient } from './reservation.utils';
 import { SessionManagerService } from '../session/session-manager.service';
 import { ReservationSessionProps } from '../session/classes/reservation-session.class';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager'
+import { CACHE_MANAGER, RedisCache } from 'src/redis/redis.constants';
 import { RoleEnum } from 'src/role/role.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
@@ -15,7 +14,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 @Injectable()
 export class ReservationSchedulerService implements OnModuleInit {
   constructor(
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @Inject(CACHE_MANAGER) private cacheManager: RedisCache,
     private readonly prisma: PrismaService,
     private readonly reservationNotification: ReservationNotificationService,
     private readonly sessionManagerService: SessionManagerService,
@@ -30,7 +29,7 @@ export class ReservationSchedulerService implements OnModuleInit {
    */
   async onModuleInit() {
 
-    const latestSessionList = await this.cacheManager.get<string>('latest-session-list');
+    const latestSessionList = await this.cacheManager.get<(ReservationSessionJson|RealtimeSessionJson)[]>('latest-session-list');
 
     await this.fetchReservationsFromDatabase();
 

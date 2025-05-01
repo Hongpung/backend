@@ -16,16 +16,18 @@ import { SessionWsAuthGuard } from 'src/guards/session-ws-auth.guard';
 import { SessionOperationController } from './session-operations.controller';
 import { AdminSessionLogController } from './admin-session-log.controller';
 import { AdminSessionLogService } from './admin-session-log.service';
+import { RedisModule } from 'src/redis/redis.module';
 
 @Module({
   imports: [
     BullModule.registerQueue({
       name: 'session',
-      redis: {
-        host: 'localhost',
-        port: 6379,
+      defaultJobOptions: {
+        removeOnComplete: true,
+        removeOnFail: 3,
       },
     }),
+    RedisModule,
     NotificationModule,
   ],
   providers: [

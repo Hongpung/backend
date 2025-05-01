@@ -5,8 +5,7 @@ import { Mutex } from 'async-mutex';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager'
+import { CACHE_MANAGER, RedisCache } from 'src/redis/redis.constants';
 import { BASIC_TIME_INTERVAL } from './constant-variable';
 
 @Injectable()
@@ -14,7 +13,7 @@ export class SessionManagerService implements OnModuleInit {
 
   constructor(
 
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @Inject(CACHE_MANAGER) private cacheManager: RedisCache,
     @InjectQueue('session') private readonly sessionQueue: Queue,
     private readonly eventEmitter: EventEmitter2
   ) { }
@@ -24,13 +23,13 @@ export class SessionManagerService implements OnModuleInit {
   private nextReservationSessionId: string | null = null;
 
   async onModuleInit() {
-    const latestSessionList = await this.cacheManager.get<string>('latest-session-list');
+    const latestSessionList = await this.cacheManager.get<(ReservationSessionJson|RealtimeSessionJson)[]>('latest-session-list');
 
     if (!!latestSessionList) {
       console.log('Find! Latest Session List')
-      const latestSessionListJsons = JSON.parse(latestSessionList) as (ReservationSessionJson | RealtimeSessionJson)[]
-      console.log(latestSessionListJsons)
-      Promise.allSettled(latestSessionListJsons.map(async (json): Promise<void> => {
+
+      console.log(latestSessionList)
+      Promise.allSettled(latestSessionList.map(async (json): Promise<void> => {
         if (json.sessionType == 'RESERVED') {
           const reservationProps = {
             ...json

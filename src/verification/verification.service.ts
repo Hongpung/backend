@@ -3,7 +3,7 @@ import { EmailDto, VerifyEmailDto } from './dto/email.dto'
 import { MailService } from 'src/mail/mail.service';
 import { PrismaService } from 'src/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import { CACHE_MANAGER, RedisCache } from 'src/redis/redis.constants';
 
 
 @Injectable()
@@ -13,7 +13,7 @@ export class VerificationService {
     private readonly mailService: MailService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
+    @Inject(CACHE_MANAGER) private readonly cacheManager: RedisCache
   ) { }
 
   async sendEmailVerificationCode(emailDto: EmailDto) {

@@ -21,9 +21,8 @@ import { ClubModule } from './club/club.module';
 import { AdminModule } from './admin/admin.module';
 import { NoticeModule } from './notice/notice.module';
 import { InstrumentModule } from './instrument/instrument.module';
-import { CacheModule } from '@nestjs/cache-manager';
 import { FirebaseModule } from './firebase/firebase.module';
-import * as redisStore from 'cache-manager-redis-store';
+import { RedisModule } from './redis/redis.module';
 import { FirebaseService } from './firebase/firebase.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -34,19 +33,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
-    CacheModule.registerAsync({
-      isGlobal: true,
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        store: redisStore,
-        host: configService.get('REDIS_HOST'),
-        port: configService.get('REDIS_PORT'),
-        username: configService.get('REDIS_USERNAME'),
-        password: configService.get('REDIS_PASSWORD'),
-        ttl: 300,
-      }),
-      inject: [ConfigService],
-    }),
+    RedisModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

@@ -1,8 +1,8 @@
 {
-  "name": "hongpung-sub",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "name": "hongpung-server",
+  "version": "0.0.2",
+  "description": "Hongpung Server",
+  "author": "YunHo Kang",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -22,7 +22,6 @@
   },
   "dependencies": {
     "@nestjs/bull": "^11.0.2",
-    "@nestjs/cache-manager": "^3.0.1",
     "@nestjs/common": "^11.0.16",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.16",
@@ -39,8 +38,6 @@
     "async-mutex": "^0.5.0",
     "aws-sdk": "^2.1692.0",
     "bcrypt": "^5.1.1",
-    "cache-manager": "^6.4.2",
-    "cache-manager-redis-store": "^3.0.1",
     "class-validator": "^0.14.1",
     "es-hangul": "^2.3.2",
     "expo-server-sdk": "^3.14.0",
@@ -62,8 +59,6 @@
     "@nestjs/testing": "^11.0.16",
     "@types/bcrypt": "^5.0.2",
     "@types/bull": "^4.10.4",
-    "@types/cache-manager": "^5.0.0",
-    "@types/cache-manager-redis-store": "^3.0.0",
     "@types/express": "^5.0.1",
     "@types/jest": "^29.5.14",
     "@types/multer": "^1.4.12",
