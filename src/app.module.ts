@@ -26,6 +26,7 @@ import { RedisModule } from './redis/redis.module';
 import { FirebaseService } from './firebase/firebase.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { VersionModule } from './version/version.module';
 
 @Module({
   imports: [
@@ -64,7 +65,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     AdminModule,
     NoticeModule,
     InstrumentModule,
-    FirebaseModule
+    FirebaseModule,
+    VersionModule
   ],
   controllers: [AppController, UploadS3Controller, AuthController],
   providers: [AppService, UploadS3Service, AuthGuard, VerifiedTokenGuard, WsAuthGuard, FirebaseService],
