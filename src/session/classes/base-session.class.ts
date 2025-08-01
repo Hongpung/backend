@@ -1,5 +1,4 @@
-import { timeFormmatForClient, timeFormmatForDB } from 'src/reservation/reservation.utils';
-import { v4 as uuidv4 } from 'uuid';
+import { getNowKoreanTime, timeFormmatForClient } from 'src/reservation/reservation.utils';
 
 export abstract class BaseSession {
 
@@ -14,10 +13,7 @@ export abstract class BaseSession {
     private _participationAvailable: boolean,
     private _status: 'BEFORE' | 'ONAIR' | 'AFTER' | 'DISCARDED',
     private _attendanceList: { user: User; status: '참가' | '출석' | '결석' | '지각'; timeStamp?: Date }[]
-  ) {
-    this._sessionId = uuidv4(); // UUID v4 생성
-    this._extendCount = 0;
-  }
+  ) {}
 
   // Getter 메서드
   get sessionId(): string {
@@ -68,9 +64,8 @@ export abstract class BaseSession {
     if (this.status == 'ONAIR') {
       this['_status'] = 'AFTER';
       // 추가적인 종료 로직 (예: 이벤트 발행)
-      const utcTime = new Date();
-
-      const newEndTimeString = timeFormmatForClient(utcTime)
+      const kstTime = getNowKoreanTime();
+      const newEndTimeString = timeFormmatForClient(kstTime);
 
       this['_endTime'] = newEndTimeString;
 
@@ -89,8 +84,6 @@ export abstract class BaseSession {
       const newEndTime = new Date(nowEndTime.getTime() + 30 * 60 * 1000);
       
       const newEndTimeString = timeFormmatForClient(newEndTime);
-      console.log("currentEndtime:"+this.endTime, "newEndTime:"+newEndTimeString)//
-
       this['_endTime'] = newEndTimeString;
 
       return nowEndTime.getTime() - utcTime.getTime();

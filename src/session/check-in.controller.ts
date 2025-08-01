@@ -39,6 +39,7 @@ export class CheckInController {
     }
 
     @Post('attend')
+    @UseGuards(AuthGuard)
     @ApiOperation({ summary: '세션 참여', description: '사용자가 세션에 참여합니다.' })
     @ApiResponse({ status: 201, description: '세션 참여 성공' })
     @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })

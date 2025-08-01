@@ -1,48 +1,48 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ReservationNotificationService } from './reservation-notification.service';
 
 import { PrismaService } from 'src/prisma.service';
-import { timeFormmatForClient } from './reservation.utils';
+import { getNowKoreanTime, parseKstDateTime, timeFormmatForClient } from './reservation.utils';
 import { SessionManagerService } from '../session/session-manager.service';
 import { ReservationSessionProps } from '../session/classes/reservation-session.class';
+import { RESERVATION_DISCARD_GRACE_MS } from '../session/constant-variable';
 import { CACHE_MANAGER, RedisCache } from 'src/redis/redis.constants';
 import { RoleEnum } from 'src/role/role.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-
 @Injectable()
-export class ReservationSchedulerService implements OnModuleInit {
+export class ReservationSchedulerService implements OnApplicationBootstrap {
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: RedisCache,
     private readonly prisma: PrismaService,
     private readonly reservationNotification: ReservationNotificationService,
     private readonly sessionManagerService: SessionManagerService,
     private readonly roleEnum: RoleEnum,
-    private readonly eventEmitter: EventEmitter2
-  ) {
-  }
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   private preReservations: ReservationDTO[]
   /**당일 자정 예약 일정 세션 삽입 로직
    * 자정 수행
    */
-  async onModuleInit() {
-
-    const latestSessionList = await this.cacheManager.get<(ReservationSessionJson|RealtimeSessionJson)[]>('latest-session-list');
+  async onApplicationBootstrap() {
+    const latestSessionList = await this.cacheManager.get<string>('latest-session-list');
 
     await this.fetchReservationsFromDatabase();
 
     if (!latestSessionList) {
       this.sessionManagerService.clearSessions();
 
-      console.log('LatestSessionList is not exist! \nAdd ReservationSessions to sessionlist')
+      console.log('LatestSessionList is not exist! \nAdd ReservationSessions to sessionlist');
 
       if (this.preReservations.length > 0)
         await this.addReservationSessionToSessionList();
     }
 
-    await this.reservationNotification.scheduleReservationUpcommingNotification(this.preReservations)
+    this.eventEmitter.emit('session-list-changed');
+
+    await this.reservationNotification.scheduleReservationUpcommingNotification(this.preReservations);
   }
 
   // 스케줄 기반 실행
@@ -54,14 +54,12 @@ export class ReservationSchedulerService implements OnModuleInit {
     //세션 로드
     await this.fetchReservationsFromDatabase();
 
-    this.addReservationSessionToSessionList()
+    await this.addReservationSessionToSessionList();
 
-    this.reservationNotification.scheduleReservationUpcommingNotification(this.preReservations)
+    this.reservationNotification.scheduleReservationUpcommingNotification(this.preReservations);
 
-
-    this.eventEmitter.emit('session-list-changed')
+    this.eventEmitter.emit('session-list-changed');
   }
-
 
   private async addReservationSessionToSessionList() {
 
@@ -78,8 +76,8 @@ export class ReservationSchedulerService implements OnModuleInit {
     this.preReservations.map(reservation => {
 
 
-      const startTime = new Date(date + 'T' + reservation.startTime + 'Z')
-      const endTime = new Date(date + 'T' + reservation.endTime + 'Z')
+      const startTime = parseKstDateTime(date, reservation.startTime);
+      const endTime = parseKstDateTime(date, reservation.endTime);
 
       if (reservation.reservationType == 'EXTERNAL') {
         const reservationSessionProps:ReservationSessionProps =
@@ -93,14 +91,24 @@ export class ReservationSchedulerService implements OnModuleInit {
           participationAvailable: false,
           creatorName: reservation.creatorName,
           borrowInstruments: reservation.borrowInstruments,
-          status: startTime.getTime() > koreaTime.getTime() ? 'BEFORE' : endTime.getTime() > koreaTime.getTime() ? 'ONAIR' : 'AFTER' as 'ONAIR' | 'BEFORE' | 'AFTER',
-          attendanceList: [] as { user: User; status: "결석" | "출석" | "지각"; timeStamp?: Date; }[]
+          status: startTime.getTime() > koreaTime.getTime() ? 'BEFORE' : endTime.getTime() > koreaTime.getTime() ? 'ONAIR' : 'AFTER',
+          attendanceList: []
         } 
 
         reservationSessionPropsList.push(reservationSessionProps)
 
       }
       else {
+        // COMMON: grace 지나면 DISCARDED, 안 넘기면 BEFORE, 연결된 세션 있으면 AFTER
+        const gracePassed = startTime.getTime() + RESERVATION_DISCARD_GRACE_MS < Date.now();
+        console.log(startTime.toISOString())
+        console.log(new Date().toISOString())
+        console.log(gracePassed)
+        const status = reservation.hasSession
+          ? 'AFTER'
+          : gracePassed
+            ? 'DISCARDED'
+            : 'BEFORE';
 
         const reservationSessionProps:ReservationSessionProps =
         {
@@ -117,8 +125,8 @@ export class ReservationSchedulerService implements OnModuleInit {
           borrowInstruments: reservation.borrowInstruments,
           creatorId: reservation.creatorId,
           creatorNickname: reservation.creatorNickname,
-          status: startTime.getTime() > koreaTime.getTime() ? 'BEFORE' : 'DISCARDED' as 'BEFORE' | 'DISCARDED',
-          attendanceList: reservation.participators.map(user => ({ user, status: '결석' })) as { user: User; status: "결석" | "출석" | "지각"; timeStamp?: Date; }[]
+          status,
+          attendanceList: reservation.participators.map(user => ({ user, status: '결석' as const }))
         }
 
         reservationSessionPropsList.push(reservationSessionProps)
@@ -130,14 +138,14 @@ export class ReservationSchedulerService implements OnModuleInit {
   }
 
   private async fetchReservationsFromDatabase() {
-    const utcTime = new Date();
-    const koreaTime = new Date(utcTime.getTime() + 9 * 60 * 60 * 1000);
+    const koreaTime = getNowKoreanTime();
     const koreaDate = new Date(koreaTime.toISOString().split('T')[0])
 
     const reservations = await this.prisma.reservation.findMany({
       where: {
         date: koreaDate
       },
+      orderBy: [{ startTime: 'asc' }],
       include: {
         creator: {
           select: {
@@ -167,7 +175,8 @@ export class ReservationSchedulerService implements OnModuleInit {
             blogUrl: true,
           }
         },
-        borrowInstruments: { include: { club: { select: { clubName: true } } } }
+        borrowInstruments: { include: { club: { select: { clubName: true } } } },
+        session: { select: { sessionId: true } }
       }
     })
 
@@ -198,7 +207,7 @@ export class ReservationSchedulerService implements OnModuleInit {
               club: instrumet.club.clubName,
               borrowAvailable: instrumet.borrowAvailable
             })),
-          } as ReservationDTO
+          }
 
         preReservaitons.push(reservationDetail)
 
@@ -229,7 +238,8 @@ export class ReservationSchedulerService implements OnModuleInit {
               club: instrumet.club.clubName,
               borrowAvailable: instrumet.borrowAvailable
             })),
-          } as ReservationDTO
+            hasSession: !!reservation.session,
+          }
 
 
         preReservaitons.push(reservationDetail)

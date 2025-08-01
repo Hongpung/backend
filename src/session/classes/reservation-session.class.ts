@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { BaseSession } from './base-session.class';
-import { timeFormmatForClient } from 'src/reservation/reservation.utils';
+import { getNowKoreanTime, timeFormmatForClient } from 'src/reservation/reservation.utils';
 
 export interface ReservationSessionProps extends Partial<ReservationSessionJson> {
   reservationId: number;
@@ -52,16 +52,21 @@ export class ReservationSession extends BaseSession {
     private readonly _creatorNickname?: string,
     private _participators: User[] = [],
     private _participatorIds: number[] = [],
-    private _borrowInstruments: BriefInstrument[] = []
+    private _borrowInstruments: BriefInstrument[] = [],
+    /** 캐시 복원 시 기존 값 유지 (미전달 시 새 세션 생성) */
+    restore?: {
+      sessionId: string;
+      extendCount: number;
+    }
   ) {
     super(
-      uuidv4(), // UUID v4 생성
+      restore?.sessionId ?? uuidv4(),
       date,
       'RESERVED',
       title,
       startTime,
       endTime,
-      0,
+      restore?.extendCount ?? 0,
       participationAvailable,
       status,
       attendanceList
@@ -126,19 +131,49 @@ export class ReservationSession extends BaseSession {
     const existingRecord = this['_attendanceList'].find(
       (record) => record.user.memberId === user.memberId
     );
+    
+    const timeStamp = getNowKoreanTime();
   
     if (existingRecord) {
       // 기존 출결 정보가 있으면 업데이트
       existingRecord.status = status;
-      existingRecord.timeStamp = new Date();
+      existingRecord.timeStamp = timeStamp;
     } else {
       // 기존 정보가 없으면 새로 추가
-      this['_attendanceList'].push({ user, status, timeStamp: new Date() });
+      this['_attendanceList'].push({ user, status, timeStamp: timeStamp });
     }
   }
   
 
-  static parse(json: ReservationSessionProps): ReservationSession {
+  /** 새 예약 세션 생성 (DB에서 로드) */
+  static create(props: ReservationSessionProps): ReservationSession {
+    return new ReservationSession(
+      props.reservationId,
+      props.date,
+      props.startTime,
+      props.endTime,
+      props.title,
+      props.reservationType,
+      props.participationAvailable,
+      props.status || 'BEFORE',
+      props.attendanceList,
+      props.creatorName,
+      props.creatorId,
+      props.creatorNickname,
+      props.participators ?? [],
+      props.participatorIds ?? [],
+      props.borrowInstruments ?? [],
+    );
+  }
+
+  /** 캐시에서 세션 복원 */
+  static restore(json: ReservationSessionJson): ReservationSession {
+    const attendanceList = json.attendanceList.map(({ user, status, timeStamp }) => ({
+      user,
+      status: status as '출석' | '결석' | '지각',
+      timeStamp: timeStamp ? new Date(timeStamp) : undefined,
+    }));
+
     return new ReservationSession(
       json.reservationId,
       json.date,
@@ -147,14 +182,18 @@ export class ReservationSession extends BaseSession {
       json.title,
       json.reservationType,
       json.participationAvailable,
-      json.status || 'BEFORE',
-      json.attendanceList,
+      json.status,
+      attendanceList,
       json.creatorName,
       json.creatorId,
       json.creatorNickname,
-      json.participators,
-      json.participatorIds,
-      json.borrowInstruments,
+      json.participators ?? [],
+      json.participatorIds ?? [],
+      json.borrowInstruments ?? [],
+      {
+        sessionId: String(json.sessionId),
+        extendCount: json.extendCount ?? 0,
+      }
     );
   }
 
@@ -174,10 +213,14 @@ export class ReservationSession extends BaseSession {
       creatorNickname: this.creatorNickname,
       participationAvailable: this.participationAvailable,
       status: this.status,
-      participators: this.participators as User[],
-      participatorIds: this.participatorIds as number[],
-      borrowInstruments: this.borrowInstruments as BriefInstrument[],
-      attendanceList: this.attendanceList as { user: User, status: '출석' | '결석' | '지각', timeStamp: Date }[]
+      participators: [...this.participators],
+      participatorIds: [...this.participatorIds],
+      borrowInstruments: [...this.borrowInstruments],
+      attendanceList: this.attendanceList.map(({ user, status, timeStamp }) => ({
+        user,
+        status: status as '출석' | '결석' | '지각',
+        timeStamp: timeStamp ?? new Date(),
+      }))
     };
   }
 }

@@ -128,7 +128,8 @@ export class SessionLogService {
 
                             }
                         },
-                        status: true
+                        status: true,
+                        timeStamp: true
                     }
                 },
                 creator: true
@@ -155,14 +156,15 @@ export class SessionLogService {
             extendCount,
             returnImageUrl,
             reservationId,
-            attendanceList: attendanceList.map(({ member: { club, roleAssignment, ...restOfMemeber }, status }) => {
+            attendanceList: attendanceList.map(({ member: { club, roleAssignment, ...restOfMemeber }, status, timeStamp }) => {
                 return {
                     member: {
                         ...restOfMemeber,
                         club: club?.clubName,
                         role: roleAssignment.map(roleAssign => this.roleEnum.EnToKo(roleAssign.role))
                     },
-                    status
+                    status,
+                    timeStamp: timeStamp ? timeFormmatForClient(timeStamp) : null
                 }
             }),
             borrowInstruments: borrowInstruments.map(({ club, ...instrument }) => ({
@@ -203,7 +205,8 @@ export class SessionLogService {
 
                             }
                         },
-                        status: true
+                        status: true,
+                        timeStamp: true
                     }
                 },
                 creator: true
@@ -233,14 +236,15 @@ export class SessionLogService {
             extendCount,
             returnImageUrl,
             reservationId,
-            attendanceList: attendanceList.map(({ member: { club, roleAssignment, ...restOfMemeber }, status }) => {
+            attendanceList: attendanceList.map(({ member: { club, roleAssignment, ...restOfMemeber }, status, timeStamp }) => {
                 return {
                     member: {
                         ...restOfMemeber,
                         club: club?.clubName,
                         role: roleAssignment.map(roleAssign => this.roleEnum.EnToKo(roleAssign.role))
                     },
-                    status
+                    status,
+                    timeStamp: timeStamp ? timeFormmatForClient(timeStamp) : null
                 }
             }),
             borrowInstruments: borrowInstruments.map(({ club, ...instrument }) => ({

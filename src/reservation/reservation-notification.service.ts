@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
+import { parseKstDateTime } from './reservation.utils';
 import { Queue } from 'bull';
 import { josa } from 'es-hangul';
 import { NotificationService } from 'src/notification/notification.service';
@@ -35,7 +36,7 @@ export class ReservationNotificationService {
         const notificationTasks = reservations.map(async (reservation) => {
             const utcTime = new Date();
             const nowTime = new Date(utcTime.getTime() + 9 * 60 * 60 * 1000);
-            const startTime = new Date(`${reservation.date}T${reservation.startTime}Z`);
+            const startTime = parseKstDateTime(reservation.date, reservation.startTime);
             if (reservation.reservationType !== 'EXTERNAL') {
                 const delay = (startTime.getTime() - nowTime.getTime()) - 15 * 60 * 1000; // 15분 전 알림
 

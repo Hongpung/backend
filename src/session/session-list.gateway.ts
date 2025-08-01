@@ -29,11 +29,10 @@ export class SessionListGateway implements OnGatewayInit, OnGatewayConnection, O
     console.log(`Client disconnected: ${client.id}`);
   }
 
-  @OnEvent('start-reservation-session') 
+  @OnEvent('start-reservation-session')
   @OnEvent('sessionUpdate')
   @OnEvent('end-session')
   @OnEvent('force-end-session')
-  @OnEvent('restore-session-list')
   @OnEvent('session-list-changed')
   async fetchNewSessions() {
     const currentReservation = this.sessionManager.getSessionListStatus()

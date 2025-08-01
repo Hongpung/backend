@@ -3,7 +3,12 @@ import { PrismaService } from 'src/prisma.service';
 import { Server, Socket } from 'socket.io';
 import { SessionManagerService } from 'src/session/session-manager.service';
 import { Injectable } from '@nestjs/common';
-import { dateFormmatForDB, timeFormmatForDB } from 'src/reservation/reservation.utils';
+import { dateFormmatForDB, getNowKoreanTime, timeFormmatForDB } from 'src/reservation/reservation.utils';
+import {
+  END_SESSION_MIN_ELAPSED_MS,
+  EXTEND_SESSION_MIN_REMAINING_MS,
+  KST_OFFSET_MS,
+} from './constant-variable';
 
 @Injectable()
 export class SessionOperationsService {
@@ -29,8 +34,6 @@ export class SessionOperationsService {
 
         const currentSession = this.sessionManager.getCurrentSessionStatus();
 
-        console.log(currentSession)
-
         if (!currentSession) return false;
 
         if (this.sessionManager.isAlreadyAttendUser(userId)) return true;
@@ -46,11 +49,10 @@ export class SessionOperationsService {
         if (this.sessionManager.isAlreadyAttendUser(userId)) {
             const currentSession = this.sessionManager.getCurrentSessionStatus();
             const endTime = timeFormmatForDB(currentSession.endTime);
-            const now = new Date()
-            const parsedTime = new Date(1970, 0, 1, now.getHours(), now.getMinutes(), now.getSeconds())
-            console.log(endTime, parsedTime)
+            const now = getNowKoreanTime()
+            const parsedTime = new Date(1970, 0, 1, now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds());
 
-            if (endTime > parsedTime && endTime.getTime() - parsedTime.getTime() >= 10 * 60 * 1000)
+            if (endTime > parsedTime && endTime.getTime() - parsedTime.getTime() >= EXTEND_SESSION_MIN_REMAINING_MS)
                 await this.sessionManager.extendSession();
 
             else
@@ -72,23 +74,19 @@ export class SessionOperationsService {
             const utcTime = new Date();
 
             const timegap = utcTime.getTime() - new Date(currentSession.date + 'T' + currentSession.startTime + '+09:00').getTime();
-            console.log('timegap:'+timegap)
-            //
-            if (timegap < 15 * 60 * 1000) return { message: 'Fail' }
-            
-            this.eventEmitter.emit('end-session', currentSession.sessionId)
-            
-            const endSession = await this.sessionManager.endSession();
-            
-            const koreanTime = new Date(utcTime.getTime() + 9 * 60 * 60 * 1000);
-            const nowTime = koreanTime.toUTCString().split(' ')[4];
 
+            if (timegap < END_SESSION_MIN_ELAPSED_MS) return { message: 'Fail' }
+            
+            this.eventEmitter.emit('end-session', currentSession.sessionId);
+
+            const endSession = await this.sessionManager.endSession();
+            if (!endSession) return { message: 'Fail' };
 
             if (this.isReservationSessionJson(endSession)) {
                 const sessionData = {
                     date: dateFormmatForDB(endSession.date),
                     startTime: timeFormmatForDB(endSession.startTime),
-                    endTime: timeFormmatForDB(nowTime),
+                    endTime: timeFormmatForDB(endSession.endTime),
                     creatorId: endSession.creatorId,
                     title: endSession.title,
                     sessionType: endSession.sessionType,
@@ -104,7 +102,7 @@ export class SessionOperationsService {
                 const attendanceData = endSession.attendanceList.map(({ user, status, timeStamp }) => ({
                     memberId: user.memberId,
                     status: status,
-                    timeStamp
+                    timeStamp: timeStamp ? new Date(timeStamp) : getNowKoreanTime(),
                 }));
 
                 await this.prisma.session.create({
@@ -122,7 +120,7 @@ export class SessionOperationsService {
                 const sessionData = {
                     date: dateFormmatForDB(endSession.date),
                     startTime: timeFormmatForDB(endSession.startTime),
-                    endTime: timeFormmatForDB(nowTime),
+                    endTime: timeFormmatForDB(endSession.endTime),
                     creatorId: endSession.creatorId,
                     title: endSession.title,
                     sessionType: endSession.sessionType,
@@ -136,7 +134,7 @@ export class SessionOperationsService {
                 const attendanceData = endSession.attendanceList.map(({ user, status, timeStamp }) => ({
                     memberId: user.memberId,
                     status: status,
-                    timeStamp
+                    timeStamp: timeStamp ? new Date(timeStamp) : new Date(),
                 }));
 
                 await this.prisma.session.create({
@@ -152,10 +150,9 @@ export class SessionOperationsService {
                 });
             }
 
-            // this.currentSession = null;
-            return { message: 'Success' }
+            return { message: 'Success' };
         }
-        return { message: 'Fail' }
+        return { message: 'Fail' };
     }
 
     @OnEvent('force-end-session')
@@ -163,17 +160,14 @@ export class SessionOperationsService {
         //세션 강제 종료
         const currentSession = this.sessionManager.getCurrentSessionStatus();
 
-        console.log('called Force End at Session-Operation')
-        if (!currentSession) return { message: 'Fail' }
+        if (!currentSession) return;
 
         await this.sessionManager.forceEndSession();
-
-        if (!currentSession) return;
 
         if (currentSession.sessionType == 'RESERVED') {
             if (currentSession.reservationType != 'EXTERNAL') {
                 const sessionData = {
-                    date: new Date(currentSession.date + 'T00:00:00.000Z'),
+                    date: dateFormmatForDB(currentSession.date),
                     startTime: timeFormmatForDB(currentSession.startTime),
                     endTime: timeFormmatForDB(currentSession.endTime),
                     creatorId: currentSession.creatorId,
@@ -191,14 +185,14 @@ export class SessionOperationsService {
                 const attendanceData = currentSession.attendanceList.map(({ user, status, timeStamp }) => ({
                     memberId: user.memberId,
                     status: status,
-                    timeStamp
+                    timeStamp: timeStamp ? new Date(timeStamp) : new Date(),
                 }));
 
                 await this.prisma.session.create({
                     data: {
                         ...sessionData,
                         attendanceList: {
-                            create: attendanceData
+                            create: attendanceData,
                         },
                     },
                     include: {
@@ -208,7 +202,7 @@ export class SessionOperationsService {
             }
         } else {
             const sessionData = {
-                date: new Date(currentSession.date + 'T00:00:00.000Z'),
+                date: dateFormmatForDB(currentSession.date),
                 startTime: timeFormmatForDB(currentSession.startTime),
                 endTime: timeFormmatForDB(currentSession.endTime),
                 creatorId: currentSession.creatorId,
@@ -224,7 +218,7 @@ export class SessionOperationsService {
             const attendanceData = currentSession.attendanceList.map(({ user, status, timeStamp }) => ({
                 memberId: user.memberId,
                 status: status,
-                timeStamp
+                timeStamp: timeStamp ? new Date(timeStamp) : new Date(),
             }));
 
             await this.prisma.session.create({
@@ -244,8 +238,7 @@ export class SessionOperationsService {
 
     emitOnChange(server: Server) {
         const currentSession = this.sessionManager.getCurrentSessionStatus();
-        console.log(currentSession)
-        server.emit('fetchSessionUpdate', JSON.stringify(currentSession))
+        server.emit('fetchSessionUpdate', JSON.stringify(currentSession));
     }
 
     fetchCurrentSession(client: Socket) {

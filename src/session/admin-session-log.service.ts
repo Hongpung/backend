@@ -39,7 +39,8 @@ export class AdminSessionLogService {
 
                             }
                         },
-                        status: true
+                        status: true,
+                        timeStamp: true
                     }
                 }
             },
@@ -66,14 +67,15 @@ export class AdminSessionLogService {
                 participationAvailable,
                 forceEnd,
                 returnImageUrl,
-                attendanceList: attendanceList.map(({ member: { club, roleAssignment, ...restOfMemeber }, status }) => {
+                attendanceList: attendanceList.map(({ member: { club, roleAssignment, ...restOfMemeber }, status, timeStamp }) => {
                     return {
                         member: {
                             ...restOfMemeber,
                             club: club?.clubName,
                             role: roleAssignment.map(roleAssign => this.roleEnum.EnToKo(roleAssign.role))
                         },
-                        status
+                        status,
+                        timeStamp: timeStamp ? timeFormmatForClient(timeStamp) : null
                     }
                 }),
                 borrowInstruments: borrowInstruments.map(({ club, ...instrument }) => ({
