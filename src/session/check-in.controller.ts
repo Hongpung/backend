@@ -29,7 +29,6 @@ export class CheckInController {
     @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
     async startSession(@Req() req: Request, @Body() body: { participationAvailable?: boolean }) {
         const { memberId } = req.user
-        console.log(body)
         try {
             return this.checkInService.tryStartSession(+memberId, body.participationAvailable)
         }

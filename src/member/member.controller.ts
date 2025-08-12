@@ -20,7 +20,6 @@ export class MemberController {
   @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
   async upsertMemberNotificationToken(@Body() memberDto: { pushEnable: boolean, notificationToken?: string }, @Req() req: Request) {
     const { memberId } = req.user
-    console.log(memberDto)
     return await this.memberService.updatePushEnable({ memberId: +memberId, ...memberDto });
   }
 
@@ -32,7 +31,6 @@ export class MemberController {
   @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
   async deleteMemberNotificationToken(@Req() req: Request) {
     const { memberId } = req.user
-    console.log('User:' + memberId + 'has delete their Token')
     return await this.memberService.deleteNotificationToken(+memberId);
   }
 
@@ -58,7 +56,6 @@ export class MemberController {
     @Body() InformationData: { profileImageUrl?: string | null, nickname?: string | null, instagramUrl?: string | null, blogUrl?: string | null },
     @Req() req: Request) {
     const { memberId } = req.user
-    console.log({ memberId, ...InformationData })
     return await this.memberService.updateUserInfo({ memberId: +memberId, ...InformationData });
   }
 

@@ -27,11 +27,33 @@ import { FirebaseService } from './firebase/firebase.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { VersionModule } from './version/version.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { LoggerModule } from 'nestjs-pino';
+import { v4 as uuidv4 } from 'uuid';
+import { Request } from 'express';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { LoggingInterceptor } from './common/logging.interceptor';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
+        // 요청/응답 자동 로그는 끄고, LoggingInterceptor에서 구조화 로그로 일원화
+        autoLogging: false,
+        // 요청별 ID: X-Request-ID 수신 시 재사용, 없으면 UUID (OTel traceId 확장 대비)
+        genReqId: (req: Request, _res: unknown) => {
+          const raw = (req as Request).headers['x-request-id'];
+          return (typeof raw === 'string' ? raw : undefined) ?? uuidv4();
+        },
+        // 로그에 traceId 필드 추가 (로그-트레이스 상관관계용)
+        customProps: (req: Request) => ({
+          traceId: (req as Request & { id?: string }).id,
+        }),
+      },
     }),
     ScheduleModule.forRoot(),
     RedisModule,
@@ -40,7 +62,7 @@ import { VersionModule } from './version/version.module';
       useFactory: async (configService: ConfigService) => ({
         redis: {
           host: configService.get('REDIS_HOST'),
-          port: configService.get('REDIS_PORT'),
+          port: Number(configService.get('REDIS_PORT')),
           username: configService.get('REDIS_USERNAME'),
           password: configService.get('REDIS_PASSWORD'),
         },
@@ -66,10 +88,19 @@ import { VersionModule } from './version/version.module';
     NoticeModule,
     InstrumentModule,
     FirebaseModule,
-    VersionModule
+    VersionModule,
+    MetricsModule,
   ],
   controllers: [AppController, UploadS3Controller, AuthController],
-  providers: [AppService, UploadS3Service, AuthGuard, VerifiedTokenGuard, WsAuthGuard, FirebaseService],
-  exports: [FirebaseService]
+  providers: [
+    AppService,
+    UploadS3Service,
+    AuthGuard,
+    VerifiedTokenGuard,
+    WsAuthGuard,
+    FirebaseService,
+    { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
+  ],
+  exports: [FirebaseService],
 })
 export class AppModule { }

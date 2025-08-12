@@ -33,31 +33,21 @@ export class NotificationService {
             const notificationToken = await this.memberService.findOneNotificationToken(memberId)
 
             if (notificationToken) {
-                console.log('Notification Token:', notificationToken);
-                console.log('Notification Data:', {
-                    memberId: +memberId,
-                    data: { title, body, data }
-                });
-
                 // 알림 생성 시도
-                const notification = await this.prisma.notification.create({
+                await this.prisma.notification.create({
                     data: {
                         memberId,
                         data: JSON.stringify({ title, body, data })
                     }
                 });
-
-                console.log(`Notification created with ID: ${notification.notificationId}`);
             }
 
             if (!notificationToken?.pushEnable)
                 continue;
 
 
-            if (!Expo.isExpoPushToken(notificationToken.notificationToken)) {
-                console.error(`Push token ${notificationToken.notificationToken} is not a valid Expo push token`);
+            if (!Expo.isExpoPushToken(notificationToken.notificationToken))
                 continue;
-            }
 
             messages.push({
                 to: notificationToken.notificationToken,
@@ -77,9 +67,8 @@ export class NotificationService {
                 const ticketChunk = await this.expo.sendPushNotificationsAsync(chunk);
                 tickets.push(...ticketChunk);
             }
-            console.log('Push notification tickets:', tickets);
-        } catch (error) {
-            console.error('Error sending push notifications:', error);
+        } catch {
+            // push 전송 실패 시 무시
         }
     }
 
@@ -100,24 +89,20 @@ export class NotificationService {
 
             if (memberToken) {
                 // 알림 생성 시도
-                const notification = await this.prisma.notification.create({
+                await this.prisma.notification.create({
                     data: {
                         memberId: memberToken.memberId,
                         data: JSON.stringify({ title, body, data })
                     }
                 });
-
-                console.log(`Notification created with ID: ${notification.notificationId}`);
             }
 
             if (!memberToken?.pushEnable)
                 continue;
 
 
-            if (!Expo.isExpoPushToken(memberToken.notificationToken)) {
-                console.error(`Push token ${memberToken.notificationToken} is not a valid Expo push token`);
+            if (!Expo.isExpoPushToken(memberToken.notificationToken))
                 continue;
-            }
 
             messages.push({
                 to: memberToken.notificationToken,
@@ -137,9 +122,8 @@ export class NotificationService {
                 const ticketChunk = await this.expo.sendPushNotificationsAsync(chunk);
                 tickets.push(...ticketChunk);
             }
-            console.log('Push notification tickets:', tickets);
-        } catch (error) {
-            console.error('Error sending push notifications:', error);
+        } catch {
+            // push 전송 실패 시 무시
         }
     }
 

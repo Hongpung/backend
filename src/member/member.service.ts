@@ -59,7 +59,6 @@ export class MemberService {
       orderBy: { enrollmentNumber: 'asc' }
     });
 
-    console.log(findMembers)
 
     return findMembers.map(({ club, roleAssignment, ...member }) => ({
       memberId: member.memberId,
@@ -332,9 +331,6 @@ export class MemberService {
         });
 
         await Promise.all(roles.map(async (role) => {
-
-          console.log({ clubId: member.clubId, memberId, role });
-
           const prevRoleAssignment = await prisma.roleAssignment.findFirst({
             where: { role, clubId: member.clubId },
             select: { roleAssignmentId: true },

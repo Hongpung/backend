@@ -45,16 +45,6 @@ export class CheckInService {
     const kstHour = koreaTime.getUTCHours();
 
     // 10~22시가 아닌 조건
-    console.log(
-      '[sessionStatus] kstHour:',
-      kstHour,
-      `| 조건: kstHour < ${OPEN_HOUR} || kstHour >= ${CLOSE_HOUR}`,
-    );
-    console.log(
-      kstHour < OPEN_HOUR || kstHour >= CLOSE_HOUR,
-      OPEN_HOUR,
-      CLOSE_HOUR,
-    );
     if (kstHour < OPEN_HOUR || kstHour >= CLOSE_HOUR)
       return {
         status: 'UNAVAILABLE',
@@ -70,36 +60,14 @@ export class CheckInService {
         )
       : null;
 
-    console.log('Next Reservation Session:', nextReservationSession);
     const currentSession = this.sessionManager.getCurrentSessionStatus();
 
     const gapMs = startTime ? startTime.getTime() - Date.now() : null;
     const gapMin = gapMs != null ? Math.round(gapMs / 60000) : null;
 
-    console.log(
-      '[sessionStatus] currentSession:',
-      !!currentSession,
-      '| nextReservationSession:',
-      !!nextReservationSession,
-      '| startTime:',
-      startTime?.toISOString(),
-      '| gapMs:',
-      gapMs,
-      '| gapMin:',
-      gapMin,
-    );
-
     //현재 진행 중인 세션이 있는 경우
-    console.log('[sessionStatus] 조건: !!currentSession');
-
     if (!!currentSession) {
       const isAlreadyAttend = this.sessionManager.isAlreadyAttendUser(userId);
-      console.log(
-        '[sessionStatus] isAlreadyAttend:',
-        isAlreadyAttend,
-        '| participationAvailable:',
-        currentSession.participationAvailable,
-      );
 
       //현재 세션이 열린 연습인 경우에는 참여 가능 내용 전송
       if (isAlreadyAttend)
@@ -130,31 +98,6 @@ export class CheckInService {
       !startTime ||
       isNextSessionStale ||
       (gapMs != null && gapMs > CREATABLE_MIN_GAP_MS);
-    console.log(
-      '[sessionStatus] CREATABLE 조건: !nextReservationSession=',
-      !nextReservationSession,
-      '| !startTime=',
-      !startTime,
-      '| isNextSessionStale(gap<-10min)=',
-      isNextSessionStale,
-      '| gapMs > 40min=',
-      gapMs != null ? gapMs > CREATABLE_MIN_GAP_MS : 'N/A',
-      '| 결과:',
-      creatableCond,
-    );
-    if (isNextSessionStale && nextReservationSession && startTime) {
-      console.log(
-        '[sessionStatus] STALE 예약 세션:',
-        'reservationId=',
-        nextReservationSession.reservationId,
-        '| date=',
-        nextReservationSession.date,
-        '| startTime=',
-        nextReservationSession.startTime,
-        '| gapMs=',
-        gapMs,
-      );
-    }
 
     if (creatableCond) {
       return {
@@ -170,20 +113,11 @@ export class CheckInService {
       gapMs != null &&
       gapMs < STARTABLE_WINDOW_BEFORE_MS &&
       gapMs > STARTABLE_WINDOW_AFTER_MS;
-    console.log(
-      '[sessionStatus] STARTABLE 조건: gap < 10min=',
-      gapMs != null ? gapMs < STARTABLE_WINDOW_BEFORE_MS : 'N/A',
-      '| gap > -10min=',
-      gapMs != null ? gapMs > STARTABLE_WINDOW_AFTER_MS : 'N/A',
-      '| 결과:',
-      gapInWindow,
-    );
 
     if (gapInWindow) {
       const isParticipator = nextReservationSession.participators?.some(
         (participator) => participator.memberId === userId,
       );
-      console.log('[sessionStatus] isParticipator:', isParticipator);
 
       //예약 세션의 참가자인 경우 시작 가능하다는 내용 전송
 
@@ -195,7 +129,6 @@ export class CheckInService {
     }
 
     //모든 조건문 통과시 모두 불가능 하다는 알럿 노출
-    console.log('[sessionStatus] → UNAVAILABLE (모든 조건 미충족)');
     return { status: 'UNAVAILABLE', errorMessage: '참여할 수 없는 세션이에요' };
   }
 
@@ -265,7 +198,6 @@ export class CheckInService {
     // sessionStatus와 동일한 로직을 재사용해서 상태를 판단하고,
     // 여기서는 그 결과에 따라 실제 액션(세션 생성/시작)만 수행한다.
     const state = this.sessionStatus(memberId);
-    console.log('[tryStartSession] sessionStatus 결과:', state);
 
     if (state.status === 'CREATABLE') {
       await this.createRealtimeSession(userInformation, participationAvailable);
@@ -279,7 +211,6 @@ export class CheckInService {
       return { status: 'started' };
     }
 
-    console.log('[tryStartSession] → failed (모든 조건 미충족)');
     return { title: 'failed' };
   }
 

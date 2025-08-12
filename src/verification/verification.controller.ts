@@ -17,7 +17,6 @@ export class VerificationController {
   @ApiResponse({ status: 403, description: '최대 인증 시도 횟수 초과' })
   async sendEmailVerificationCode(@Body() EmailDto: EmailDto) {
     try {
-      console.log(EmailDto)
       await this.verificationService.sendEmailVerificationCode(EmailDto);
       return { message: 'Verification code sent successfully' };
     } catch (e) {
@@ -33,12 +32,9 @@ export class VerificationController {
   @ApiResponse({ status: 401, description: '만료된 인증 코드' })
   async verifyEmailVerificationCode(@Body() VerifyEmailDto: VerifyEmailDto) {
     try {
-      console.log(VerifyEmailDto)
       const response = await this.verificationService.verifyEmailVerificationCodeMethod(VerifyEmailDto);
-      console.log(response)
       return response;
     } catch (e) {
-      console.error(e)
       if (e instanceof Error) {
         if (e.message == 'Incorrect Code') throw new HttpException('Incorrect code', HttpStatus.BAD_REQUEST);
         else if (e.message == 'Exfired Code') throw new HttpException('Verification code has expired', HttpStatus.UNAUTHORIZED);
@@ -52,7 +48,6 @@ export class VerificationController {
   @ApiResponse({ status: 403, description: '최대 인증 시도 횟수 초과' })
   async sendPasswordVerificationCode(@Body() EmailDto: EmailDto) {
     try {
-      console.log(EmailDto)
       await this.verificationService.sendPasswordVerificationCode(EmailDto)
       return { message: 'Verification code sent successfully' };
     } catch (e) {
@@ -68,7 +63,6 @@ export class VerificationController {
   @ApiResponse({ status: 401, description: '만료된 인증 코드' })
   async verfyPasswordVerificationCode(@Body() VerifyEmailDto: VerifyEmailDto) {
     try {
-      console.log(VerifyEmailDto)
       await this.verificationService.verifyPasswordVerificationCode(VerifyEmailDto);
       const token = await this.verificationService.issueVerficationToken(VerifyEmailDto)
       return { message: 'Verification code sent successfully', token };

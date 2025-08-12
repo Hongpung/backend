@@ -24,7 +24,6 @@ export class NotificationController {
     @ApiResponse({ status: 201, description: '알림 생성 성공' })
     @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
     async sendSomeUser(@Body() sendForm: { to: number[], title: string, text: string }) {
-        console.log(sendForm)
         await this.notificationService.sendPushNotifications({
             to: sendForm.to,
             title: sendForm.title,
@@ -41,7 +40,6 @@ export class NotificationController {
     async getNotifications(@Req() req: Request) {
         const { memberId } = req.user;
         const notifications = await this.notificationService.getUserNotifications(+memberId);
-        console.log(notifications)
         return notifications
     }
 
@@ -62,7 +60,6 @@ export class NotificationController {
     @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
     async userReadNotifications(@Req() req: Request) {
         const { memberId } = req.user;
-        console.log('user Read All')
         await this.notificationService.userReadNotifications(+memberId);
     }
 

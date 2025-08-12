@@ -210,23 +210,16 @@ export class SessionManagerService implements OnApplicationBootstrap {
 
   @OnEvent('session-list-changed')
   async storeLatestSessionListToCache() {
-    try {
-      console.log('sessionList 캐시 저장 시작');
-      const nowKst = new Date(Date.now() + KST_OFFSET_MS);
-      const todayKst = nowKst.toISOString().split('T')[0];
-      const payload: CachedSessionListPayload = {
-        date: todayKst,
-        list: this.currentSessionList.map((s) => s.toJSON()),
-      };
-      await this.cacheManager.set(
-        'latest-session-list',
-        JSON.stringify(payload),
-      );
-      console.log('sessionList 캐시 저장 성공');
-    } catch (error) {
-      console.error('sessionList 캐시 저장 실패:', error);
-      throw error;
-    }
+    const nowKst = new Date(Date.now() + KST_OFFSET_MS);
+    const todayKst = nowKst.toISOString().split('T')[0];
+    const payload: CachedSessionListPayload = {
+      date: todayKst,
+      list: this.currentSessionList.map((s) => s.toJSON()),
+    };
+    await this.cacheManager.set(
+      'latest-session-list',
+      JSON.stringify(payload),
+    );
   }
 
   /**
@@ -258,44 +251,18 @@ export class SessionManagerService implements OnApplicationBootstrap {
     const nextReservationSession = this.currentSessionList.find(
       (s) => s.status === 'BEFORE' && s instanceof ReservationSession,
     );
-    if (!nextReservationSession) {
-      console.log(
-        '[SessionManager] getNextReservationSession: nextReservationSessionId 없음',
-      );
+    if (!nextReservationSession)
       return null;
-    }
 
     const session = this.currentSessionList.find(
       (s) =>
         s.sessionId === nextReservationSession.sessionId &&
         s instanceof ReservationSession,
     );
-    if (!(session instanceof ReservationSession)) {
-      console.log(
-        '[SessionManager] getNextReservationSession: 일치하는 예약 세션을 찾지 못함. nextReservationSessionId=',
-        nextReservationSession.sessionId,
-      );
+    if (!(session instanceof ReservationSession))
       return null;
-    }
 
-    const json = session.toJSON();
-    console.log(
-      '[SessionManager] getNextReservationSession 반환:',
-      'sessionId=',
-      json.sessionId,
-      '| reservationId=',
-      json.reservationId,
-      '| date=',
-      json.date,
-      '| startTime=',
-      json.startTime,
-      '| status=',
-      json.status,
-      '| reservationType=',
-      json.reservationType,
-    );
-
-    return json;
+    return session.toJSON();
   }
 
   private getCurrentSession(): RealtimeSession | ReservationSession | null {
@@ -381,23 +348,6 @@ export class SessionManagerService implements OnApplicationBootstrap {
       | ReservationSession
       | undefined;
 
-    if (nextReservationSession) {
-      console.log(
-        '[SessionManager] reloadNextReservationSessionId 선택:',
-        'sessionId=',
-        nextReservationSession.sessionId,
-        '| reservationId=',
-        nextReservationSession.reservationId,
-        '| date=',
-        nextReservationSession.date,
-        '| startTime=',
-        nextReservationSession.startTime,
-      );
-    } else {
-      console.log(
-        '[SessionManager] reloadNextReservationSessionId: 유효한 다음 예약 세션 없음',
-      );
-    }
   }
 
   @OnEvent('discard-reservation-session')
@@ -661,10 +611,8 @@ export class SessionManagerService implements OnApplicationBootstrap {
     const release = await this.mutex.acquire();
     try {
       const currentSession = this.getCurrentSession();
-      if (!currentSession) {
-        console.warn('No current session found to extend.');
+      if (!currentSession)
         return;
-      }
 
       const newTerm = currentSession.extend();
       if (typeof newTerm !== 'number' || newTerm <= 0) {
@@ -696,14 +644,12 @@ export class SessionManagerService implements OnApplicationBootstrap {
     }
   }
 
-  async endSession(): Promise<ReservationSessionJson | RealtimeSessionJson> {
+  async endSession(): Promise<ReservationSessionJson | RealtimeSessionJson | void> {
     const release = await this.mutex.acquire();
     try {
       const currentSession = this.getCurrentSession();
-      if (!currentSession) {
-        console.warn('No current session found to extend.');
+      if (!currentSession)
         return;
-      }
 
       currentSession.end();
 
@@ -732,10 +678,8 @@ export class SessionManagerService implements OnApplicationBootstrap {
     const release = await this.mutex.acquire();
     try {
       const currentSession = this.getCurrentSession();
-      if (!currentSession) {
-        console.warn('No current session found to extend.');
+      if (!currentSession)
         return;
-      }
 
       currentSession.end();
       await removeSessionJob(

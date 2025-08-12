@@ -69,7 +69,6 @@ export class BannersController {
   @ApiResponse({ status: 404, description: '배너를 찾을 수 없음' })
   async update(@Param('id') id: string, @Body() updateBannerDto: UpdateBannerDto) {
     try {
-      console.log(updateBannerDto)
       return await this.bannersService.update(+id, updateBannerDto);
     }
     catch (error) {
@@ -89,7 +88,6 @@ export class BannersController {
   @ApiResponse({ status: 404, description: '배너를 찾을 수 없음' })
   async remove(@Param('id') id: string) {
     try {
-      console.log(id)
       return await this.bannersService.remove(+id);
     } catch (error) {
       {

@@ -25,8 +25,7 @@ export class SessionListGateway implements OnGatewayInit, OnGatewayConnection, O
     this.server.emit('reservationsFetched', JSON.stringify(currentReservation));
   }
 
-  handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+  handleDisconnect(_client: Socket) {
   }
 
   @OnEvent('start-reservation-session')

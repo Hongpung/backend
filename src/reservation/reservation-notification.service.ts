@@ -15,7 +15,7 @@ export class ReservationNotificationService {
     async morningScheduleReservationNotification(reservations: ReservationDTO[]) {
         const notificationTasks = reservations.map(async (reservation) => {
             this.notificationService.sendPushNotifications({
-                to: reservation.participators.map(user => { console.log(user.memberId); return (user.memberId) }),
+                to: reservation.participators.map(user => user.memberId),
                 title: '오늘의 연습실 예약',
                 body: josa(reservation.title.length > 10 ? reservation.title.substring(0, 10) + '...' : reservation.title, '이/가') + ' ' + reservation.startTime.slice(0, -3) + '에 시작됩니다.\n늦지 않고 시간안에 도착해야해요.'
             })
@@ -23,11 +23,7 @@ export class ReservationNotificationService {
 
         const results = await Promise.allSettled(notificationTasks);
 
-        results.forEach((result, index) => {
-            if (result.status === 'rejected') {
-                console.error(`Failed to schedule notification for reservation: ${reservations[index].reservationId}`, result.reason);
-            }
-        });
+        results.forEach(() => {});
     }
 
 
@@ -49,20 +45,13 @@ export class ReservationNotificationService {
                         removeOnComplete: true,
                         jobId: reservation.reservationId
                     });
-                    console.log(`Notification scheduled for reservation ${reservation.reservationId}`);
-                } else {
-                    console.log(`Reservation ${reservation.reservationId} is already past start time.`);
                 }
             }
         });
 
         const results = await Promise.allSettled(notificationTasks);
 
-        results.forEach((result, index) => {
-            if (result.status === 'rejected') {
-                console.error(`Failed to schedule notification for reservation: ${reservations[index].reservationId}`, result.reason);
-            }
-        });
+        results.forEach(() => {});
     }
 
 
@@ -78,11 +67,7 @@ export class ReservationNotificationService {
 
         const results = await Promise.allSettled(notificationTasks);
 
-        results.forEach((result, index) => {
-            if (result.status === 'rejected') {
-                console.error(`Failed to schedule notification for reservation: ${reservations[index].reservationId}`, result.reason);
-            }
-        });
+        results.forEach(() => {});
     }
 
     async forceDeleteNotification({ participators, title }: { participators: { memberId: number }[], title: string }) {

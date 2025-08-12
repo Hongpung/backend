@@ -24,20 +24,12 @@ export class SessionWsAuthGuard implements CanActivate {
       const { isCheckin } = this.sessionOperation.isCheckinUser(+payload.memberId);
 
       if (!isCheckin) {
-        console.warn(`Invalid user ID: ${payload.memberId}`);
-
-        client.emit('invalid-user')//
+        client.emit('invalid-user');
         client.disconnect();
-
         return false;
-      } else {
-
-        console.warn(`valid user ID: ${payload.memberId}`);
-        return true;
       }
-
-    } catch (err) {
-      console.error('Invalid token:', err.message);
+      return true;
+    } catch {
       return false;
     }
   }

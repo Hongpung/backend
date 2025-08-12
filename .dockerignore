@@ -1,0 +1,17 @@
+node_modules
+dist
+docs
+npm-debug.log
+yarn-error.log
+
+.git
+.gitignore
+.DS_Store
+._*
+
+.env
+.env.*
+
+Dockerfile
+docker-compose.yml
+loki-data

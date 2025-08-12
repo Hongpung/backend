@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
+  // LoggingInterceptor는 APP_INTERCEPTOR로 AppModule에서 등록 (PinoLogger DI)
 
   app.enableCors({
     origin: ['https://storage.hongpung.com', 'https://admin.hongpung.com'],

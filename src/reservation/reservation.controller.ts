@@ -120,7 +120,6 @@ export class ReservationController {
     @ApiResponse({ status: 404, description: '예약을 찾을 수 없음' })
     async updateReservation(@Param('reservationId') reservationId: number, @Body() updateReservationDto: UpdateReservationDto, @Req() req: Request) {
         const { memberId } = req.user
-        console.log({ creatorId: +memberId, reservationId: +reservationId }, updateReservationDto)
         return await this.reservationService.updateReservation({ creatorId: +memberId, reservationId: +reservationId, updateReservationDto })
     }
 

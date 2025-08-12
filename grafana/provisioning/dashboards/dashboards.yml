@@ -1,0 +1,11 @@
+# Grafana 프로비저닝: 대시보드 폴더 (JSON 파일은 이 폴더에 두면 자동 로드)
+apiVersion: 1
+providers:
+  - name: hongpung
+    orgId: 1
+    folder: Hongpung
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards

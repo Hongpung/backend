@@ -34,8 +34,6 @@ export class ReservationSchedulerService implements OnApplicationBootstrap {
     if (!latestSessionList) {
       this.sessionManagerService.clearSessions();
 
-      console.log('LatestSessionList is not exist! \nAdd ReservationSessions to sessionlist');
-
       if (this.preReservations.length > 0)
         await this.addReservationSessionToSessionList();
     }
@@ -101,9 +99,6 @@ export class ReservationSchedulerService implements OnApplicationBootstrap {
       else {
         // COMMON: grace 지나면 DISCARDED, 안 넘기면 BEFORE, 연결된 세션 있으면 AFTER
         const gracePassed = startTime.getTime() + RESERVATION_DISCARD_GRACE_MS < Date.now();
-        console.log(startTime.toISOString())
-        console.log(new Date().toISOString())
-        console.log(gracePassed)
         const status = reservation.hasSession
           ? 'AFTER'
           : gracePassed
@@ -298,8 +293,6 @@ export class ReservationSchedulerService implements OnApplicationBootstrap {
         borrowInstruments: { include: { club: true } }
       }
     })
-
-    console.log(reservationDetails, koreaTime)
 
     return reservationDetails.map(reservation => ({
       ...reservation,

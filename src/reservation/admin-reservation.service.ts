@@ -159,7 +159,6 @@ export class AdminReservationService {
             }
 
             // 그 외의 예상치 못한 에러 처리
-            console.error('Unhandled error:', error);
             throw new InternalServerErrorException('예약 업데이트 중 알 수 없는 에러가 발생했습니다.');
         })
     }
@@ -198,8 +197,6 @@ export class AdminReservationService {
             if (date || startTime || endTime) {
 
                 const overlappingReservations = await findConflictReservations(prisma, { date, endTime, startTime, notIncludeId: reservationId })
-
-                console.log(overlappingReservations)
 
                 if (overlappingReservations.length > 0) {
                     const reservationsInfo = await prisma.reservation.findMany({
@@ -282,7 +279,6 @@ export class AdminReservationService {
             }
 
             // 그 외의 예상치 못한 에러 처리
-            console.error('Unhandled error:', error);
             throw new InternalServerErrorException('예약 업데이트 중 알 수 없는 에러가 발생했습니다.');
         })
 
@@ -314,8 +310,6 @@ export class AdminReservationService {
             토: 6,
         };
 
-        console.log({ ...batchReservationDTO })
-        
         const option: Record<string, string | number> = { createdAdminName: adminName, reservationType: batchReservationOption.reservationType, title: batchReservationOption.title }
 
         if (batchReservationOption.reservationType == 'EXTERNAL')
@@ -436,7 +430,6 @@ export class AdminReservationService {
             }
 
             // 그 외의 예상치 못한 에러 처리
-            console.error('Unhandled error:', error);
             throw new InternalServerErrorException('예약 업데이트 중 알 수 없는 에러가 발생했습니다.');
         })
     }

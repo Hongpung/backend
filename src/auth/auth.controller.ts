@@ -37,7 +37,6 @@ export class AuthController {
     @ApiResponse({ status: 200, description: '로그인 성공' })
     @ApiResponse({ status: 401, description: '인증 실패' })
     async login(@Body() loginData: LoginDto) {
-        console.log('on Login')
         return await this.authService.login(loginData)
     }
 
@@ -48,7 +47,6 @@ export class AuthController {
     @ApiResponse({ status: 200, description: '로그아웃 성공' })
     @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
     async logout(@Req() req: Request) {
-        console.log('on Logout')
         const { memberId } = req.user
         return await this.authService.logout(memberId)
     }
@@ -59,7 +57,6 @@ export class AuthController {
     @ApiResponse({ status: 200, description: '관리자 로그인 성공' })
     @ApiResponse({ status: 401, description: '인증 실패' })
     async adminLogin(@Body() loginData: LoginDto) {
-        console.log('on admin Login')
         return await this.authService.adminLogin(loginData)
     }
 
@@ -106,7 +103,6 @@ export class AuthController {
     @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
     @ApiResponse({ status: 403, description: '권한이 없는 사용자' })
     async acceptSignup(@Body() authIds: { acceptedSignUpIds: number[] }) {
-        console.log(authIds.acceptedSignUpIds)
         return await this.authService.acceptSignUp(authIds.acceptedSignUpIds)
     }
 
@@ -142,7 +138,6 @@ export class AuthController {
     @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
     async remove(@Req() req: Request, @Body() body: { password: string }) {
         const { memberId } = req.user
-        console.log(body)
         return this.authService.remove(+memberId, body.password);
     }
 

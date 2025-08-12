@@ -13,8 +13,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy, RedisCache {
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
-    const host = this.configService.get('REDIS_HOST') ?? 'localhost';
-    const port = this.configService.get('REDIS_PORT') ?? 6379;
+    const host = this.configService.get('REDIS_HOST');
+    const port = this.configService.get('REDIS_PORT');
     const username = this.configService.get('REDIS_USERNAME');
     const password = this.configService.get('REDIS_PASSWORD');
 
@@ -25,12 +25,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy, RedisCache {
       password: password || undefined,
     });
 
-    this.client.on('connect', () => {
-      console.log('[Redis] Connected');
-    });
-    this.client.on('error', (err) => {
-      console.error('[Redis] Error:', err.message);
-    });
+    this.client.on('connect', () => {});
+    this.client.on('error', () => {});
   }
 
   async onModuleDestroy() {

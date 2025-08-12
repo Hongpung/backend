@@ -34,10 +34,8 @@ export class VerificationService {
     if (!correctCode)
       throw Error('Expired Code')
 
-    if (correctCode != +code) {
-      console.log('틀린 숫자')
+    if (correctCode != +code)
       throw Error('Incorrect Code')
-    }
 
     this.cacheManager.del(email);
 
@@ -64,10 +62,8 @@ export class VerificationService {
     if (!correctCode)
       throw Error('Expired Code')
 
-    if (correctCode != +code) {
-      console.log('틀린 숫자')
+    if (correctCode != +code)
       throw Error('Incorrect Code')
-    }
 
     this.cacheManager.del(email);
 

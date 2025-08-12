@@ -1,0 +1,81 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: hongpung-app
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - loki
+    restart: always
+
+  prometheus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prometheus
+    image: hongpung-prometheus:local
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    env_file:
+      - .env
+    environment:
+      # 템플릿 치환용 (앱과 동일한 .env 값 사용)
+      - ENV_METRICS_USERNAME=${METRICS_USERNAME}
+      - ENV_METRICS_PASSWORD=${METRICS_PASSWORD}
+      # 스크래핑 대상: 같은 compose 내 앱 = app:8080, 호스트에서 앱 실행 = host.docker.internal:8080
+      - ENV_SCRAPE_TARGET=${ENV_SCRAPE_TARGET:-app:8080}
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml.template:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      - app
+
+  loki:
+    image: grafana/loki:3.2.0
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - ./loki-data:/loki
+
+  promtail:
+    image: grafana/promtail:3.2.0
+    container_name: promtail
+    volumes:
+      - ./promtail-config.yaml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    env_file:
+      - .env
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    depends_on:
+      - loki
+      - prometheus
+
+volumes:
+  grafana-data:
+  prometheus-data:
+

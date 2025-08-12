@@ -1,0 +1,14 @@
+# Prometheus scrape config for hongpung-server metrics
+# /metrics 가 Basic Auth 로 보호된 경우, 아래 basic_auth 를 설정한 뒤
+# 앱의 METRICS_USERNAME / METRICS_PASSWORD 와 동일한 값으로 맞추세요.
+scrape_configs:
+  - job_name: hongpung-app
+    static_configs:
+      # 도커 Compose 내부: app:8080 / 호스트에서 앱 실행 시: host.docker.internal:8080
+      - targets: ['${ENV_SCRAPE_TARGET}']
+    metrics_path: /metrics
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    basic_auth:
+      username: "${ENV_METRICS_USERNAME}"
+      password: "${ENV_METRICS_PASSWORD}"

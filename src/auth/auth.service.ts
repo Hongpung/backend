@@ -291,9 +291,8 @@ export class AuthService {
         Promise.all(acceptedUsers.map(async ({ email, name }) => {
             try {
                 await this.mailService.sendSignUpAcceptedMail(email, name);
-                console.log(`메일 전송 성공: ${email}`);
-            } catch (error) {
-                console.error(`메일 전송 실패: ${email}, 에러: ${error.message}`);
+            } catch {
+                // 메일 전송 실패 시 무시
             }
         }))
 

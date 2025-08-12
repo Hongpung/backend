@@ -22,7 +22,6 @@ export class AdminReservationController {
     @ApiResponse({ status: 403, description: '권한이 없는 사용자' })
     async forceCreateReservation(@Body() createReservationDto: ForceCreateReservationDto, @Req() req: Request) {
         const { adminId } = req.admin
-        console.log(createReservationDto)
         return await this.reservationService.adminCreateReservation({ createReservationDto, adminId: +adminId })
     }
 
@@ -47,7 +46,6 @@ export class AdminReservationController {
     @ApiResponse({ status: 403, description: '권한이 없는 사용자' })
     async modifyReservation(@Param('reservationId') reservationId: string, @Body() updateReservationDto: CreateReservationDto, @Req() req: Request) {
         const { adminId } = req.admin
-        console.log(reservationId)
         return await this.reservationService.adminEditReservation({ adminId: +adminId, reservationId: +reservationId, updateReservationDto })
     }
 
@@ -58,7 +56,6 @@ export class AdminReservationController {
     @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
     @ApiResponse({ status: 403, description: '권한이 없는 사용자' })
     async batchCreateReservation(@Body() batchReservationDTO: BatchReservtionDTO<reservationType>, @Req() req: Request) {
-        console.log('called')
         const { adminId } = req.admin
         this.reservationService.adminRigisterRoutineReservation(adminId, batchReservationDTO)
     }

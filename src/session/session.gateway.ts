@@ -32,8 +32,7 @@ export class SessionGateway implements OnGatewayInit, OnGatewayConnection, OnGat
     async handleConnection(client: Socket) {
     }
 
-    async handleDisconnect(client: Socket) {
-        console.log(`Client disconnected: ${client.id}`);
+    async handleDisconnect(_client: Socket) {
     }
 
     @OnEvent('startSession')

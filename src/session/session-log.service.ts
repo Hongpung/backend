@@ -15,8 +15,6 @@ export class SessionLogService {
         const startDate = new Date(year, month, 1, 9, 0, 0)
         const endDate = new Date(year, month+1, 0, 9, 0, 0)
 
-        console.log(startDate.toISOString(), endDate.toISOString())
-
         const userSessions = await this.prisma.attendance.findMany({
             where: {
                 memberId,
@@ -31,8 +29,6 @@ export class SessionLogService {
                 session: { include: { creator: true } },
             },
         });
-
-        console.log(userSessions)
 
         return userSessions.map((attendance) => {
             const { creatorId, date, endTime, startTime, sessionType, participationAvailable, sessionId, forceEnd, reservationType, title, creator } = attendance.session
