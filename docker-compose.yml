@@ -1,16 +1,44 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: hongpung-redis
+    command: redis-server --appendonly yes
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
       target: runner
     container_name: hongpung-app
+    # 운영 host 네트워크: 아래 주석 해제 + app.environment의 REDIS_* 주석 처리 +
+    # redis.ports "127.0.0.1:6379:6379" 해제 후 .env REDIS_HOST=127.0.0.1
+    # network_mode: "host"
     ports:
       - "8080:8080"
     env_file:
       - .env
+    environment:
+      # compose 내부 Redis (호스트에 6379 미노출). .env의 REDIS_HOST보다 우선
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      # secret/는 Git·이미지에 포함하지 않음 — 호스트 디렉터리를 런타임 마운트
+      - ./secret:/app/secret:ro
     depends_on:
-      - loki
+      redis:
+        condition: service_healthy
+      loki:
+        condition: service_started
     restart: always
 
   prometheus:
@@ -78,4 +106,5 @@ services:
 volumes:
   grafana-data:
   prometheus-data:
+  redis-data:
 

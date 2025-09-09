@@ -1,13 +1,8 @@
-FROM node:22-alpine AS builder
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci
-
-COPY . .
-RUN npx prisma generate
-# 빌드 시 Node heap 제한 (저사양: 1GB RAM + 1GB 스왑 환경용)
-RUN NODE_OPTIONS=--max-old-space-size=2048 npm run build
+# 호스트에서 이미지 빌드 전 (Docker 안에서 nest build 하지 않음 — OOM 방지):
+#   npm ci
+#   npx prisma generate
+#   npm run build
+#   docker compose build app
 
 FROM node:22-alpine AS runner
 WORKDIR /app
@@ -16,13 +11,15 @@ ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# prisma CLI 없이 생성된 client만 복사
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# prisma CLI(devDependency) 없이 호스트에서 generate 한 결과만 복사
+COPY node_modules/.prisma ./node_modules/.prisma
+COPY dist ./dist
 
-COPY --from=builder /app/dist ./dist
+RUN test -f dist/src/main.js || (echo "dist 없음 — 호스트에서 npm run build 실행" >&2 && exit 1)
 
 EXPOSE 8080
-CMD ["node", "dist/main.js"]
+# .env는 .dockerignore로 이미지에 포함하지 않음 → compose env_file 또는 docker run --env-file
+CMD ["node", "/app/dist/src/main.js"]
 
 # ------------------------------------------------------------------------------
 # Prometheus (envsubst로 설정 치환 후 실행). 빌드: docker build --target prometheus -t hongpung-prometheus .

@@ -6,7 +6,9 @@
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["strictUndefinedChecks"]
+  previewFeatures = ["strictUndefinedChecks", "relationJoins"]
+  // 로컬(Mac) generate → Alpine Docker 이미지에 .prisma 복사 시 Linux 엔진 필요
+  binaryTargets   = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -36,6 +38,7 @@ model Member {
 
   clubId         Int?
   club           Club?            @relation(fields: [clubId], references: [clubId], onDelete: SetNull)
+  primaryClubMembers ClubPrimaryMember[]
   roleAssignment RoleAssignment[] //동아리내 역할군군
   adminLevel     AdminLevel?
 
@@ -55,6 +58,51 @@ model Member {
   attendanedSession Attendance[] //세선 출석 목록
 
   isPermmited permitStatus @default(PENDING) // 화이트 리스트 허가 여부
+
+  devices       MemberDevice[]
+  refreshTokens MemberRefreshToken[]
+}
+
+model MemberDevice {
+  id          Int      @id @default(autoincrement())
+  memberId    Int
+  member      Member   @relation(fields: [memberId], references: [memberId], onDelete: Cascade)
+  deviceId    String   @db.VarChar(64)
+  deviceName  String?
+  userAgent   String?
+  ipAddress   String?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @updatedAt
+  lastLoginAt DateTime?
+
+  @@unique([memberId, deviceId])
+  @@index([memberId])
+  @@index([deviceId])
+}
+
+model MemberRefreshToken {
+  id                Int       @id @default(autoincrement())
+  memberId          Int
+  member            Member    @relation(fields: [memberId], references: [memberId], onDelete: Cascade)
+  sessionId         String    @db.VarChar(36)
+  deviceId          String    @db.VarChar(64)
+  tokenHash         String    @unique @db.VarChar(64)
+  rememberMe        Boolean   @default(false)
+  deviceName        String?
+  userAgent         String?
+  ipAddress         String?
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  replacedByTokenId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([memberId])
+  @@index([sessionId])
+  @@index([deviceId])
+  @@index([expiresAt])
+  @@index([revokedAt])
 }
 
 model Club {
@@ -63,9 +111,23 @@ model Club {
   profileImageUrl String?
   // 관리자와 리더 필드
   members    Member[]
+  primaryMembers ClubPrimaryMember[]
   Instrument Instrument[]
 
   RoleAssignment RoleAssignment[]
+}
+
+model ClubPrimaryMember {
+  memberId            Int @id
+  clubId              Int
+  updatedAt           DateTime @updatedAt
+
+  club   Club   @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [memberId], onDelete: Cascade)
+
+  @@unique([clubId, memberId])
+  @@index([clubId], map: "club_primary_members_club_idx")
+  @@index([memberId], map: "club_primary_members_member_idx")
 }
 
 enum Role {
@@ -106,8 +168,8 @@ model Instrument {
   imageUrl        String?
   borrowAvailable Boolean
 
-  borrowHistory Session[]
-  Reservation   Reservation[]
+  borrowHistory BorrowedInstrument[] // Session에서만 사용 (로그용, 스냅샷 유지)
+  Reservation          Reservation[] // Reservation은 현행 유지 (정합성)
 
   @@index([clubId], map: "instuments_club_fkey")
 }
@@ -143,14 +205,50 @@ model Session {
 
   returnImageUrl Json?
 
-  borrowInstruments Instrument[]
-  attendanceList    Attendance[]
+  borrowInstruments BorrowedInstrument[] // Session 전용 (로그용, Instrument 삭제 시 SetNull + 스냅샷 유지)
+  attendanceList           Attendance[]
+  runtimeMapping           SessionRuntimeMapping?
+}
+
+/// 온에어 UUID ↔ Session 로그 PK. 종료 persist 멱등용. Cron으로 주기 삭제.
+model SessionRuntimeMapping {
+  runtimeSessionId String  @id @db.VarChar(36)
+  sessionId        Int     @unique
+  session          Session @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// Session 전용 대여 악기 (로그용 - Instrument 삭제 시에도 스냅샷 유지)
+model BorrowedInstrument {
+  borrowedInstrumentId Int       @id @default(autoincrement())
+  sessionId          Int
+  instrumentId       Int?
+  instrument         Instrument?  @relation(fields: [instrumentId], references: [instrumentId], onDelete: SetNull)
+  instrumentSnapshot Json         // { name, instrumentType, clubName, etc. } - Instrument 삭제 시에도 표시용
+  session            Session      @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+
+  @@unique([sessionId, instrumentId])
+  @@index([sessionId])
+  @@index([instrumentId])
 }
 
 enum reservationType {
   REGULAR //정규 연습
   COMMON //
   EXTERNAL
+}
+
+enum DiscardedByType {
+  SYSTEM
+  ADMIN
+}
+
+enum DiscardReason {
+  NO_SHOW
+  ADMIN_FORCE_DISCARD
+  SYSTEM_RECOVERY
 }
 
 model Reservation {
@@ -167,13 +265,36 @@ model Reservation {
   creatorId           Int? // 회원 생성자 (nullable)
   creator             Member? @relation("Creator", fields: [creatorId], references: [memberId], onDelete: SetNull)
   externalCreatorName String? // 외부인 이름 (nullable)
+  creatorSnapshot     Json?
 
   participators     Member[]     @relation("Participator")
   borrowInstruments Instrument[]
 
   session Session? //세션이 수행되면 세션 표시
+  discardedReservation DiscardedReservation?
 
   @@index([date], name: "date_index")
+}
+
+model DiscardedReservation {
+  discardedReservationId Int @id @default(autoincrement())
+
+  // 1:1 매핑
+  reservationId Int @unique
+  reservation   Reservation @relation(fields: [reservationId], references: [reservationId], onDelete: Cascade)
+
+  // 당시 상태 스냅샷(JSON)
+  reservationSnapshot Json
+
+  // 운영 분류용 메타
+  discardedByType     DiscardedByType @default(SYSTEM)
+  discardReason       DiscardReason   @default(NO_SHOW)
+
+  // 정책상 discardAt은 start+grace로 결정 가능, 실제 적재 시각만 저장
+  createdAt DateTime @default(now())
+
+  @@index([discardReason], name: "discarded_reservation_reason_idx")
+  @@index([createdAt], name: "discarded_reservation_created_at_idx")
 }
 
 model Attendance {
@@ -181,6 +302,7 @@ model Attendance {
   sessionId    Int
   memberId     Int?
   member       Member?  @relation(fields: [memberId], references: [memberId], onDelete: SetNull)
+  memberSnapshot Json? // Member 삭제 시에도 로그 유지: { name, nickname, clubId, etc. }
   status       String // "출석", "지각", "결석" 등의 상태 저장 저장시에 확인인
   session      Session  @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
   timeStamp    DateTime @db.Timestamp(0)
