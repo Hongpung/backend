@@ -11,7 +11,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { UploadS3Controller } from './upload-s3/upload-s3.controller';
 import { UploadS3Service } from './upload-s3/upload-s3.service';
 import { SessionModule } from './session/session.module';
-import { BullModule } from '@nestjs/bull';
+import { BullModule } from '@nestjs/bullmq';
 import { AuthController } from './auth/auth.controller';
 import { AuthGuard } from './guards/auth.guard';
 import { AuthModule } from './auth/auth.module';
@@ -60,9 +60,9 @@ import { LoggingInterceptor } from './common/logging.interceptor';
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        redis: {
+        connection: {
           host: configService.get('REDIS_HOST'),
-          port: Number(configService.get('REDIS_PORT')),
+          port: configService.get('REDIS_PORT'),
           username: configService.get('REDIS_USERNAME'),
           password: configService.get('REDIS_PASSWORD'),
         },

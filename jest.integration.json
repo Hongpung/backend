@@ -1,0 +1,15 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "src",
+  "setupFiles": ["<rootDir>/../test/prisma/jest.integration.env.ts"],
+  "testRegex": "\\.(repository|handler|service)\\.integration\\.spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/$1",
+    "^@hongpung/redis$": "<rootDir>/../test/mocks/hongpung-redis.ts"
+  },
+  "testEnvironment": "node",
+  "coverageDirectory": "../coverage/integration"
+}
