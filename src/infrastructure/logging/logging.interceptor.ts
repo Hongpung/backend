@@ -19,9 +19,24 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const ctx = context.switchToHttp();
     const req = ctx.getRequest<Request & { id?: string }>();
-    const { method, url, ip } = req;
+    const { method, ip } = req;
+    const fullUrl = req.originalUrl ?? req.url;
+    const path = fullUrl.split('?')[0];
     const userAgent = req.get('user-agent') ?? '';
     const now = Date.now();
+
+    this.logger.info(
+      {
+        type: 'http_request_start',
+        method,
+        path,
+        url: fullUrl,
+        ip,
+        userAgent,
+        traceId: req.id,
+      },
+      `HTTP → ${method} ${path}`,
+    );
 
     return next.handle().pipe(
       tap({
@@ -33,14 +48,15 @@ export class LoggingInterceptor implements NestInterceptor {
             {
               type: 'http_request',
               method,
-              url,
+              path,
+              url: fullUrl,
               statusCode,
               durationMs,
               ip,
               userAgent,
               traceId: req.id,
             },
-            `HTTP ${method} ${url} ${statusCode} ${durationMs}ms`,
+            `HTTP ${method} ${path} ${statusCode} ${durationMs}ms`,
           );
         },
         error: (err: { status?: number; message?: string }) => {
@@ -50,7 +66,8 @@ export class LoggingInterceptor implements NestInterceptor {
             {
               type: 'http_request',
               method,
-              url,
+              path,
+              url: fullUrl,
               statusCode,
               durationMs,
               ip,
@@ -58,7 +75,7 @@ export class LoggingInterceptor implements NestInterceptor {
               traceId: req.id,
               errMessage: err?.message,
             },
-            `HTTP ${method} ${url} ${statusCode} ${durationMs}ms error`,
+            `HTTP ${method} ${path} ${statusCode} ${durationMs}ms error`,
           );
         },
       }),

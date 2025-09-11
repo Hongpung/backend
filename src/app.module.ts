@@ -27,12 +27,14 @@ import { FirebaseService } from './firebase/firebase.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { VersionModule } from './version/version.module';
-import { MetricsModule } from './metrics/metrics.module';
+import { PrismaModule } from './infrastructure/prisma/prisma.module';
+import { MailModule } from './infrastructure/mail/mail.module';
+import { MetricsModule } from './infrastructure/metrics/metrics.module';
 import { LoggerModule } from 'nestjs-pino';
 import { v4 as uuidv4 } from 'uuid';
 import { Request } from 'express';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { LoggingInterceptor } from './common/logging.interceptor';
+import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor';
 
 @Module({
   imports: [
@@ -90,6 +92,8 @@ import { LoggingInterceptor } from './common/logging.interceptor';
     FirebaseModule,
     VersionModule,
     MetricsModule,
+    PrismaModule,
+    MailModule,
   ],
   controllers: [AppController, UploadS3Controller, AuthController],
   providers: [
