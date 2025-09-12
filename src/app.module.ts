@@ -7,7 +7,8 @@ import { MemberModule } from './member/member.module';
 import { NotificationModule } from './notification/notification.module';
 import { ReservationModule } from './reservation/reservation.module';
 import { VerificationModule } from './verification/verification.module';
-import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EventModule } from './infrastructure/events/event.module';
+import { RpcModule } from './infrastructure/rpc/rpc.module';
 import { UploadS3Controller } from './upload-s3/upload-s3.controller';
 import { UploadS3Service } from './upload-s3/upload-s3.service';
 import { SessionModule } from './session/session.module';
@@ -21,9 +22,8 @@ import { ClubModule } from './club/club.module';
 import { AdminModule } from './admin/admin.module';
 import { NoticeModule } from './notice/notice.module';
 import { InstrumentModule } from './instrument/instrument.module';
-import { FirebaseModule } from './firebase/firebase.module';
-import { RedisModule } from './redis/redis.module';
-import { FirebaseService } from './firebase/firebase.service';
+import { FirebaseModule } from './infrastructure/firebase/firebase.module';
+import { RedisModule } from '@hongpung/redis';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { VersionModule } from './version/version.module';
@@ -41,6 +41,7 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    RedisModule,
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
@@ -58,7 +59,6 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
       },
     }),
     ScheduleModule.forRoot(),
-    RedisModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -75,9 +75,8 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
       ttl: 60,
       limit: 20,
     }]),
-    EventEmitterModule.forRoot({
-      global: true
-    }),
+    EventModule,
+    RpcModule,
     BannersModule,
     MemberModule,
     NotificationModule,
@@ -102,9 +101,7 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
     AuthGuard,
     VerifiedTokenGuard,
     WsAuthGuard,
-    FirebaseService,
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
   ],
-  exports: [FirebaseService],
 })
 export class AppModule { }
