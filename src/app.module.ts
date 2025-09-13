@@ -13,11 +13,8 @@ import { UploadS3Controller } from './upload-s3/upload-s3.controller';
 import { UploadS3Service } from './upload-s3/upload-s3.service';
 import { SessionModule } from './session/session.module';
 import { BullModule } from '@nestjs/bullmq';
-import { AuthController } from './auth/auth.controller';
-import { AuthGuard } from './guards/auth.guard';
+import { SecurityModule } from './security/security.module';
 import { AuthModule } from './auth/auth.module';
-import { WsAuthGuard } from './guards/ws-auth.guard';
-import { VerifiedTokenGuard } from './guards/verified-token.guard';
 import { ClubModule } from './club/club.module';
 import { AdminModule } from './admin/admin.module';
 import { NoticeModule } from './notice/notice.module';
@@ -84,6 +81,7 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
     VerificationModule,
     SessionModule,
     AuthModule,
+    SecurityModule,
     ClubModule,
     AdminModule,
     NoticeModule,
@@ -94,13 +92,10 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
     PrismaModule,
     MailModule,
   ],
-  controllers: [AppController, UploadS3Controller, AuthController],
+  controllers: [AppController, UploadS3Controller],
   providers: [
     AppService,
     UploadS3Service,
-    AuthGuard,
-    VerifiedTokenGuard,
-    WsAuthGuard,
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
   ],
 })
