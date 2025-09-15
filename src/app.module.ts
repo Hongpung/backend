@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { BannersModule } from './banners/banners.module';
+import { BannerModule } from './features/banner/banner.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { MemberModule } from './member/member.module';
 import { NotificationModule } from './notification/notification.module';
@@ -74,7 +74,7 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
     }]),
     EventModule,
     RpcModule,
-    BannersModule,
+    BannerModule,
     MemberModule,
     NotificationModule,
     ReservationModule,
