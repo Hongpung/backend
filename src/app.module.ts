@@ -9,8 +9,7 @@ import { ReservationModule } from './reservation/reservation.module';
 import { VerificationModule } from './verification/verification.module';
 import { EventModule } from './infrastructure/events/event.module';
 import { RpcModule } from './infrastructure/rpc/rpc.module';
-import { UploadS3Controller } from './upload-s3/upload-s3.controller';
-import { UploadS3Service } from './upload-s3/upload-s3.service';
+import { UploadModule } from './features/upload/upload.module';
 import { SessionModule } from './session/session.module';
 import { BullModule } from '@nestjs/bullmq';
 import { SecurityModule } from './security/security.module';
@@ -91,11 +90,11 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
     MetricsModule,
     PrismaModule,
     MailModule,
+    UploadModule,
   ],
-  controllers: [AppController, UploadS3Controller],
+  controllers: [AppController],
   providers: [
     AppService,
-    UploadS3Service,
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
   ],
 })
