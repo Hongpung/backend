@@ -12,6 +12,7 @@ import { RpcModule } from './infrastructure/rpc/rpc.module';
 import { UploadModule } from './features/upload/upload.module';
 import { SessionModule } from './session/session.module';
 import { BullModule } from '@nestjs/bullmq';
+import { AdminAuthModule } from './features/admin-auth/admin-auth.module';
 import { SecurityModule } from './security/security.module';
 import { AuthModule } from './auth/auth.module';
 import { ClubModule } from './features/club/club.module';
@@ -80,6 +81,7 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
     VerificationModule,
     SessionModule,
     AuthModule,
+    AdminAuthModule,
     SecurityModule,
     ClubModule,
     AdminModule,
