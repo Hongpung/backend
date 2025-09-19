@@ -18,7 +18,7 @@ import { AuthModule } from './auth/auth.module';
 import { ClubModule } from './features/club/club.module';
 import { AdminModule } from './features/admin/admin.module';
 import { NoticeModule } from './features/notice/notice.module';
-import { InstrumentModule } from './instrument/instrument.module';
+import { InstrumentModule } from './features/instrument/instrument.module';
 import { FirebaseModule } from './infrastructure/firebase/firebase.module';
 import { RedisModule } from '@hongpung/redis';
 import { ScheduleModule } from '@nestjs/schedule';
