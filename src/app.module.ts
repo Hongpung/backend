@@ -6,7 +6,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { MemberModule } from './features/member/member.module';
 import { PushNotificationModule } from './features/push-notification/push-notification.module';
 import { ReservationModule } from './reservation/reservation.module';
-import { VerificationModule } from './verification/verification.module';
 import { EventModule } from './infrastructure/events/event.module';
 import { RpcModule } from './infrastructure/rpc/rpc.module';
 import { UploadModule } from './features/upload/upload.module';
@@ -14,7 +13,7 @@ import { SessionModule } from './session/session.module';
 import { BullModule } from '@nestjs/bullmq';
 import { AdminAuthModule } from './features/admin-auth/admin-auth.module';
 import { SecurityModule } from './security/security.module';
-import { AuthModule } from './auth/auth.module';
+import { MemberAuthModule } from './features/member-auth/member-auth.module';
 import { ClubModule } from './features/club/club.module';
 import { AdminModule } from './features/admin/admin.module';
 import { NoticeModule } from './features/notice/notice.module';
@@ -78,9 +77,8 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
     MemberModule,
     PushNotificationModule,
     ReservationModule,
-    VerificationModule,
     SessionModule,
-    AuthModule,
+    MemberAuthModule,
     AdminAuthModule,
     SecurityModule,
     ClubModule,
