@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { BannerModule } from './features/banner/banner.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { MemberModule } from './features/member/member.module';
-import { NotificationModule } from './notification/notification.module';
+import { PushNotificationModule } from './features/push-notification/push-notification.module';
 import { ReservationModule } from './reservation/reservation.module';
 import { VerificationModule } from './verification/verification.module';
 import { EventModule } from './infrastructure/events/event.module';
@@ -76,7 +76,7 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
     RpcModule,
     BannerModule,
     MemberModule,
-    NotificationModule,
+    PushNotificationModule,
     ReservationModule,
     VerificationModule,
     SessionModule,
