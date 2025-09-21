@@ -5,7 +5,7 @@ import { BannerModule } from './features/banner/banner.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { MemberModule } from './features/member/member.module';
 import { PushNotificationModule } from './features/push-notification/push-notification.module';
-import { ReservationModule } from './reservation/reservation.module';
+import { ReservationModule } from './features/reservation/reservation.module';
 import { EventModule } from './infrastructure/events/event.module';
 import { RpcModule } from './infrastructure/rpc/rpc.module';
 import { UploadModule } from './features/upload/upload.module';
