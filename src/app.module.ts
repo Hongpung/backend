@@ -10,7 +10,7 @@ import { SessionLogModule } from './features/session-log/session-log.module';
 import { EventModule } from './infrastructure/events/event.module';
 import { RpcModule } from './infrastructure/rpc/rpc.module';
 import { UploadModule } from './features/upload/upload.module';
-import { SessionModule } from './session/session.module';
+import { SessionModule } from './features/session/session.module';
 import { BullModule } from '@nestjs/bullmq';
 import { AdminAuthModule } from './features/admin-auth/admin-auth.module';
 import { SecurityModule } from './security/security.module';
@@ -68,20 +68,22 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
       }),
       inject: [ConfigService],
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60,
-      limit: 20,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60,
+        limit: 20,
+      },
+    ]),
     EventModule,
     RpcModule,
     BannerModule,
     MemberModule,
     PushNotificationModule,
+    SessionModule,
     ReservationModule,
     SessionLogModule,
-    SessionModule,
-    MemberAuthModule,
     AdminAuthModule,
+    MemberAuthModule,
     SecurityModule,
     ClubModule,
     AdminModule,

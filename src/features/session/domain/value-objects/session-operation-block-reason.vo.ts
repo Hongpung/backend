@@ -1,0 +1,32 @@
+/** 도메인·애플리케이션 분기용 코드. API·WS에는 한글 reason 문구로 변환 */
+
+export const SESSION_EXTEND_BLOCKED_REASONS = [
+  'NO_CURRENT_SESSION',
+  'NOT_ATTENDED',
+  'MIN_ELAPSED_NOT_MET',
+  'MIN_REMAINING_NOT_MET',
+  'NEXT_RESERVATION_CONFLICT',
+  'OPERATING_HOURS_EXCEEDED',
+  'ALREADY_ENDED',
+  'SESSION_ID_MISMATCH',
+  'NONE',
+] as const;
+
+export type SessionExtendBlockedReason =
+  (typeof SESSION_EXTEND_BLOCKED_REASONS)[number];
+
+export const SESSION_END_BLOCKED_REASONS = [
+  'NO_CURRENT_SESSION',
+  'NOT_ATTENDED',
+  'NONE',
+  'MIN_REMAINING_NOT_MET',
+  'MIN_ELAPSED_NOT_MET',
+  'SESSION_LOG_PERSIST_FAILED',
+  'SESSION_LOG_RPC_TIMEOUT',
+  'RUNTIME_END_FAILED',
+  'ALREADY_ENDED',
+  'SESSION_ID_MISMATCH',
+] as const;
+
+export type SessionEndBlockedReason =
+  (typeof SESSION_END_BLOCKED_REASONS)[number];
