@@ -1,6 +1,6 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import { CACHE_MANAGER, RedisCache } from './redis/redis.constants';
 import { AppService } from './app.service';
+import { CACHE_MANAGER, RedisCache } from '@hongpung/redis';
 
 @Controller()
 export class AppController {
@@ -21,15 +21,17 @@ export class AppController {
     const testValue = { ok: true, at: new Date().toISOString() };
 
     try {
-      await this.cacheManager.set(testKey, JSON.stringify(testValue), 10);
-      const retrieved = await this.cacheManager.get<string>(testKey);
-      const parsed = retrieved ? JSON.parse(retrieved) : null;
+      await this.cacheManager.set(testKey, testValue, 10);
+      const retrieved = await this.cacheManager.get<{
+        ok?: boolean;
+        at?: string;
+      }>(testKey);
 
       return {
-        status: parsed?.ok ? 'ok' : 'fail',
-        message: parsed?.ok ? '캐시 정상 동작' : '캐시 조회 실패',
+        status: retrieved?.ok ? 'ok' : 'fail',
+        message: retrieved?.ok ? '캐시 정상 동작' : '캐시 조회 실패',
         setAt: testValue.at,
-        retrievedAt: parsed?.at,
+        retrievedAt: retrieved?.at,
       };
     } catch (err) {
       return {

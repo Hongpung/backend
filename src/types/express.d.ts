@@ -1,10 +1,14 @@
-// src/types/express.d.ts
 import 'express';
+import type {
+  AdminTokenPayload,
+  MemberTokenPayload,
+  VerifiedTokenPayload,
+} from 'src/security/domain';
 
 declare module 'express' {
   export interface Request {
-    user?: { memberId: number, email: string, clubId: number | null };
-    verificationToken?: { verifiedEmail: string };
-    admin?: { adminId: number, adminRole: string | null }
+    user?: MemberTokenPayload;
+    verificationToken?: VerifiedTokenPayload;
+    admin?: AdminTokenPayload;
   }
 }

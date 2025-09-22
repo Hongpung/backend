@@ -41,7 +41,8 @@ export class VersionService {
       return {
         ios: null,
         android: null,
-        message: 'Expo 설정이 필요합니다. EXPO_TOKEN, EXPO_APP_ID를 확인해주세요.',
+        message:
+          'Expo 설정이 필요합니다. EXPO_TOKEN, EXPO_APP_ID를 확인해주세요.',
       };
     }
 
@@ -73,7 +74,10 @@ export class VersionService {
     const updates: Array<{ platform?: string; [key: string]: unknown }> =
       updateBranches?.[0]?.updates ?? [];
 
-    const toUpdateInfo = (u: { platform?: string; [key: string]: unknown }): UpdateInfo => ({
+    const toUpdateInfo = (u: {
+      platform?: string;
+      [key: string]: unknown;
+    }): UpdateInfo => ({
       version: String(u.runtimeVersion ?? ''),
       id: String(u.id ?? ''),
       message: String(u.message ?? ''),
@@ -82,7 +86,9 @@ export class VersionService {
     });
 
     const latestIos = updates.find((u) => u.platform?.toLowerCase() === 'ios');
-    const latestAndroid = updates.find((u) => u.platform?.toLowerCase() === 'android');
+    const latestAndroid = updates.find(
+      (u) => u.platform?.toLowerCase() === 'android',
+    );
 
     return {
       ios: latestIos ? toUpdateInfo(latestIos) : null,

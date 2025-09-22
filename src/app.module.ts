@@ -6,32 +6,31 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { MemberModule } from './features/member/member.module';
 import { PushNotificationModule } from './features/push-notification/push-notification.module';
 import { ReservationModule } from './features/reservation/reservation.module';
-import { SessionLogModule } from './features/session-log/session-log.module';
-import { EventModule } from './infrastructure/events/event.module';
-import { RpcModule } from './infrastructure/rpc/rpc.module';
 import { UploadModule } from './features/upload/upload.module';
+import { SessionLogModule } from './features/session-log/session-log.module';
 import { SessionModule } from './features/session/session.module';
 import { BullModule } from '@nestjs/bullmq';
 import { AdminAuthModule } from './features/admin-auth/admin-auth.module';
-import { SecurityModule } from './security/security.module';
 import { MemberAuthModule } from './features/member-auth/member-auth.module';
+import { SecurityModule } from './security/security.module';
 import { ClubModule } from './features/club/club.module';
 import { AdminModule } from './features/admin/admin.module';
 import { NoticeModule } from './features/notice/notice.module';
 import { InstrumentModule } from './features/instrument/instrument.module';
-import { FirebaseModule } from './infrastructure/firebase/firebase.module';
 import { RedisModule } from '@hongpung/redis';
+import { FirebaseModule } from './infrastructure/firebase/firebase.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { VersionModule } from './version/version.module';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
+import { EventModule } from './infrastructure/events/event.module';
+import { RpcModule } from './infrastructure/rpc/rpc.module';
 import { MailModule } from './infrastructure/mail/mail.module';
-import { MetricsModule } from './infrastructure/metrics/metrics.module';
 import { LoggerModule } from 'nestjs-pino';
 import { v4 as uuidv4 } from 'uuid';
-import { Request } from 'express';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor';
+import { MetricsModule } from './infrastructure/metrics/metrics.module';
 
 @Module({
   imports: [
@@ -42,17 +41,28 @@ import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.NODE_ENV !== 'production' ? 'debug' : 'info',
-        // 요청/응답 자동 로그는 끄고, LoggingInterceptor에서 구조화 로그로 일원화
         autoLogging: false,
-        // 요청별 ID: X-Request-ID 수신 시 재사용, 없으면 UUID (OTel traceId 확장 대비)
-        genReqId: (req: Request, _res: unknown) => {
-          const raw = (req as Request).headers['x-request-id'];
+        genReqId: (req: any) => {
+          const raw = req.headers['x-request-id'];
           return (typeof raw === 'string' ? raw : undefined) ?? uuidv4();
         },
-        // 로그에 traceId 필드 추가 (로그-트레이스 상관관계용)
-        customProps: (req: Request) => ({
-          traceId: (req as Request & { id?: string }).id,
+        customProps: (req: any) => ({
+          traceId: req.id,
         }),
+        // 로컬·스테이징: JSON 한 줄 대신 Nest 기본에 가까운 읽기 쉬운 로그
+        ...(process.env.NODE_ENV !== 'production'
+          ? {
+              transport: {
+                target: 'pino-pretty',
+                options: {
+                  colorize: true,
+                  translateTime: 'HH:MM:ss.l',
+                  singleLine: true,
+                  ignore: 'pid,hostname',
+                },
+              },
+            }
+          : {}),
       },
     }),
     ScheduleModule.forRoot(),
