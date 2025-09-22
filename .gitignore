@@ -5,9 +5,9 @@
 
 # testing
 /coverage
-*.spec.ts
+# *.spec.ts
 *.spec.js
-**/*.spec.ts
+# **/*.spec.ts
 **/*.spec.js
 
 # production
@@ -76,6 +76,14 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Local secrets (APNs, FCM 등 — 키 파일은 커밋하지 않음)
+secret/**/*.p8
+secret/**/*.zip
+secret/**/service-account-key.json
+secret/**/*.pem
+secret/**/*.key
+secret/**/firebase-admin-sdk-key.json
+
 # dotenv environment variable files
 .env
 .env.development.local
@@ -99,4 +107,3 @@ loki-data
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 seed.ts
-*/migrations
