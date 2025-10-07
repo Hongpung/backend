@@ -8,6 +8,7 @@ import { PushNotificationModule } from './features/push-notification/push-notifi
 import { ReservationModule } from './features/reservation/reservation.module';
 import { UploadModule } from './features/upload/upload.module';
 import { SessionLogModule } from './features/session-log/session-log.module';
+// Session: 레거시 src/session 트리는 제거됨. 유일한 런타임 모듈은 아래 features/session.
 import { SessionModule } from './features/session/session.module';
 import { BullModule } from '@nestjs/bullmq';
 import { AdminAuthModule } from './features/admin-auth/admin-auth.module';
@@ -31,6 +32,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor';
 import { MetricsModule } from './infrastructure/metrics/metrics.module';
+import { LiveSessionNotificationModule } from './features/live-session-notification/live-session-notification.module';
 
 @Module({
   imports: [
@@ -89,6 +91,7 @@ import { MetricsModule } from './infrastructure/metrics/metrics.module';
     BannerModule,
     MemberModule,
     PushNotificationModule,
+    LiveSessionNotificationModule,
     SessionModule,
     ReservationModule,
     SessionLogModule,
@@ -112,4 +115,4 @@ import { MetricsModule } from './infrastructure/metrics/metrics.module';
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
   ],
 })
-export class AppModule { }
+export class AppModule {}
