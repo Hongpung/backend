@@ -51,6 +51,7 @@ import { ReservationInstrumentLookupPort } from './application/ports/out/reserva
 import { ReservationInstrumentLookupAdapter } from './infrastructure/out/adapters/reservation-instrument-lookup.adapter';
 import { ReservationUserCommandController } from './infrastructure/in/controllers/reservation-user-command.controller';
 import { ReservationUserQueryController } from './infrastructure/in/controllers/reservation-user-query.controller';
+import { AdminReservationController } from './infrastructure/in/controllers/admin-reservation.controller';
 import { ResponseValidationInterceptor } from 'src/common/validation/response-validation.interceptor';
 
 @Module({
@@ -136,6 +137,7 @@ import { ResponseValidationInterceptor } from 'src/common/validation/response-va
   controllers: [
     ReservationUserCommandController,
     ReservationUserQueryController,
+    AdminReservationController,
   ],
   exports: [
     ReservationRepositoryPort,
