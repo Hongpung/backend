@@ -13,8 +13,13 @@ import {
 import { Server, Socket } from 'socket.io';
 import { SessionRuntimeManager } from 'src/features/session/application/runtime/session-runtime.manager';
 import { SessionControlWsAuthGuard } from 'src/security/presentation/guards/session-control-ws-auth.guard';
+import { OnairSessionLegacyWsPresenter } from './onair-legacy.presenter';
 import { OnairSessionUseStateWsPresenter } from './onair.presenter';
-import { ONAIR_CLIENT_WS_EVENT, WS_EVENT } from './onair-event.constant';
+import {
+  LEGACY_ONAIR_WS_EVENT,
+  ONAIR_CLIENT_WS_EVENT,
+  WS_EVENT,
+} from './onair-event.constant';
 
 @Injectable()
 @WebSocketGateway({
@@ -32,8 +37,9 @@ export class OnairSessionGateway
 
   async afterInit() {}
 
+  /** v2 only: v1 clients poll via `fetchCurrentSession`. */
   async handleConnection(client: Socket) {
-    this.emitToClient(client, WS_EVENT.CURRENT_SESSION);
+    this.emitV2ToClient(client, WS_EVENT.CURRENT_SESSION);
   }
 
   async handleDisconnect() {}
@@ -42,52 +48,60 @@ export class OnairSessionGateway
     return this.sessionRuntimeManager.getOnairSessionUseStateReadModel();
   }
 
-  private getCurrentSessionPayloadJson(
-    readModel = this.getCurrentSessionReadModel(),
-  ) {
+  private getV2PayloadJson(readModel = this.getCurrentSessionReadModel()) {
     return OnairSessionUseStateWsPresenter.toJson(readModel);
   }
 
-  private emitToAll(
+  private getLegacyPayloadJson(readModel = this.getCurrentSessionReadModel()) {
+    return OnairSessionLegacyWsPresenter.toJson(readModel);
+  }
+
+  private emitV2ToAll(
     event: string,
-    payloadJson = this.getCurrentSessionPayloadJson(),
-  ) {
+    payloadJson = this.getV2PayloadJson(),
+  ): void {
     this.server.emit(event, payloadJson);
   }
 
-  private emitToClient(
+  private emitV2ToClient(
     client: Socket,
     event: string,
-    payloadJson = this.getCurrentSessionPayloadJson(),
-  ) {
+    payloadJson = this.getV2PayloadJson(),
+  ): void {
     client.emit(event, payloadJson);
   }
 
   private emitSessionUpdated(): void {
-    const payloadJson = this.getCurrentSessionPayloadJson();
+    const readModel = this.getCurrentSessionReadModel();
+    const v2Json = this.getV2PayloadJson(readModel);
+    const legacyJson = this.getLegacyPayloadJson(readModel);
 
-    this.emitToAll(WS_EVENT.FETCH_SESSION_UPDATE, payloadJson);
-    this.emitToAll(WS_EVENT.SESSION_USE_STATE_UPDATED, payloadJson);
+    this.server.emit(LEGACY_ONAIR_WS_EVENT.FETCH_SESSION_UPDATE, legacyJson);
+    this.emitV2ToAll(WS_EVENT.FETCH_SESSION_UPDATE, v2Json);
+    this.emitV2ToAll(WS_EVENT.SESSION_USE_STATE_UPDATED, v2Json);
   }
 
-  private emitSessionClosed(
-    event:
-      | (typeof WS_EVENT)['SESSION_ENDED']
-      | (typeof WS_EVENT)['FORCE_ENDED'],
-  ): void {
-    const payloadJson = this.getCurrentSessionPayloadJson();
+  private emitSessionClosed(forceEnd: boolean): void {
+    const v2Json = this.getV2PayloadJson();
 
-    this.emitToAll(WS_EVENT.SESSION_USE_STATE_UPDATED, payloadJson);
-    this.server.emit(event);
+    this.emitV2ToAll(WS_EVENT.SESSION_USE_STATE_UPDATED, v2Json);
+
+    const legacyEndedEvent = forceEnd
+      ? LEGACY_ONAIR_WS_EVENT.FORCE_ENDED
+      : LEGACY_ONAIR_WS_EVENT.SESSION_ENDED;
+    const v2EndedEvent = forceEnd
+      ? WS_EVENT.FORCE_ENDED
+      : WS_EVENT.SESSION_ENDED;
+
+    this.server.emit(legacyEndedEvent);
+    this.server.emit(v2EndedEvent);
     this.server.disconnectSockets();
   }
 
   @OnEvent(EVENT_TOKEN.END_SESSION)
   handleEndSession(payload: EndSessionEvent) {
     const forceEnd = payload.sessionSnapshot?.forceEnd === true;
-    this.emitSessionClosed(
-      forceEnd ? WS_EVENT.FORCE_ENDED : WS_EVENT.SESSION_ENDED,
-    );
+    this.emitSessionClosed(forceEnd);
   }
 
   @OnEvent(EVENT_TOKEN.CREATE_SESSION)
@@ -101,13 +115,21 @@ export class OnairSessionGateway
     this.emitSessionUpdated();
   }
 
+  @SubscribeMessage(LEGACY_ONAIR_WS_EVENT.FETCH_CURRENT_SESSION)
+  legacyFetchCurrentSession(client: Socket) {
+    client.emit(
+      LEGACY_ONAIR_WS_EVENT.CURRENT_SESSION,
+      this.getLegacyPayloadJson(),
+    );
+  }
+
   @SubscribeMessage(ONAIR_CLIENT_WS_EVENT.FETCH_CURRENT_SESSION)
   fetchCurrentSession(client: Socket) {
-    this.emitToClient(client, WS_EVENT.CURRENT_SESSION);
+    this.emitV2ToClient(client, WS_EVENT.CURRENT_SESSION);
   }
 
   @SubscribeMessage(ONAIR_CLIENT_WS_EVENT.SESSION_USE_STATE)
   fetchSessionUseState(client: Socket) {
-    this.emitToClient(client, WS_EVENT.SESSION_USE_STATE);
+    this.emitV2ToClient(client, WS_EVENT.SESSION_USE_STATE);
   }
 }

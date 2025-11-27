@@ -7,7 +7,11 @@ import {
 import { JwtTokenVerifierService } from '../../infrastructure/jwt/jwt-token-verifier.service';
 import { TokenExtractor } from '../../infrastructure/jwt/token-extractor';
 import { SessionOperationsService } from 'src/features/session/application/services/session-operations.service';
-import { emitWsAuthError, WS_AUTH_ERROR_CODE } from './ws-auth-error';
+import {
+  emitLegacyInvalidUser,
+  emitWsAuthError,
+  WS_AUTH_ERROR_CODE,
+} from './ws-auth-error';
 
 @Injectable()
 export class SessionControlWsAuthGuard implements CanActivate {
@@ -37,6 +41,7 @@ export class SessionControlWsAuthGuard implements CanActivate {
 
       if (!isCheckin) {
         this.logger.warn(`WS: memberId ${payload.memberId} is not checked in`);
+        emitLegacyInvalidUser(client);
         emitWsAuthError(client, WS_AUTH_ERROR_CODE.USER_NOT_CHECKED_IN);
         client.disconnect();
         return false;

@@ -1,3 +1,12 @@
+/** v1 live Socket.IO event names (`socket-live.json`) */
+export const LEGACY_ONAIR_WS_EVENT = {
+  FETCH_CURRENT_SESSION: 'fetchCurrentSession',
+  CURRENT_SESSION: 'currentSession',
+  FETCH_SESSION_UPDATE: 'fetchSessionUpdate',
+  SESSION_ENDED: 'sessionEnded',
+  FORCE_ENDED: 'forceEnded',
+} as const;
+
 export const ONAIR_CLIENT_WS_EVENT = {
   FETCH_CURRENT_SESSION: 'current-session',
   SESSION_USE_STATE: 'session-use-state',

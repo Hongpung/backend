@@ -13,12 +13,15 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { EVENT_TOKEN } from 'src/contracts/events/event.constant';
 import { SessionListWsAuthGuard } from 'src/security/presentation/guards/session-list-ws-auth.guard';
 import { SessionRuntimeManager } from 'src/features/session/application/runtime/session-runtime.manager';
-import { SESSION_LIST_WS_EVENT } from './session-list-event.constant';
+import {
+  LEGACY_SESSION_LIST_WS_EVENT,
+  SESSION_LIST_WS_EVENT,
+} from './session-list-event.constant';
 import { SessionWebSocketMapper } from './mappers/session-ws-session.mapper';
 
 @Injectable()
 @WebSocketGateway({ namespace: '/reservation', cors: { origin: '*' } })
-@UseGuards(SessionListWsAuthGuard) // Guard 적용
+@UseGuards(SessionListWsAuthGuard)
 export class SessionListGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -30,16 +33,23 @@ export class SessionListGateway
   async afterInit() {}
 
   async handleConnection() {
-    const currentReservation = this.sessionRuntimeManager
-      .getSessionListStatus()
-      .map((session) => SessionWebSocketMapper.toPayload(session));
-    this.server.emit(
-      SESSION_LIST_WS_EVENT.RESERVATIONS_FETCHED,
-      JSON.stringify(currentReservation),
-    );
+    this.emitReservationsFetched();
   }
 
   handleDisconnect() {}
+
+  private getSessionListJson(): string {
+    const currentReservation = this.sessionRuntimeManager
+      .getSessionListStatus()
+      .map((session) => SessionWebSocketMapper.toPayload(session));
+    return JSON.stringify(currentReservation);
+  }
+
+  private emitReservationsFetched(): void {
+    const json = this.getSessionListJson();
+    this.server.emit(LEGACY_SESSION_LIST_WS_EVENT.RESERVATIONS_FETCHED, json);
+    this.server.emit(SESSION_LIST_WS_EVENT.RESERVATIONS_FETCHED, json);
+  }
 
   @OnEvent(EVENT_TOKEN.START_RESERVATION_SESSION)
   @OnEvent(EVENT_TOKEN.SESSION_UPDATE)
@@ -48,26 +58,19 @@ export class SessionListGateway
   @OnEvent(EVENT_TOKEN.RESTORE_SESSION_LIST)
   @OnEvent(EVENT_TOKEN.SESSION_LIST_CHANGED)
   async fetchNewSessions() {
-    const currentReservation = this.sessionRuntimeManager
-      .getSessionListStatus()
-      .map((session) => SessionWebSocketMapper.toPayload(session));
-    this.server.emit(
-      SESSION_LIST_WS_EVENT.RESERVATIONS_FETCHED,
-      JSON.stringify(currentReservation),
-    );
+    this.emitReservationsFetched();
   }
 
-  @OnEvent(EVENT_TOKEN.RESERVATIONS_UPDATED) // 이벤트 구독
+  @OnEvent(EVENT_TOKEN.RESERVATIONS_UPDATED)
   handleReservationsUpdate() {}
 
+  @SubscribeMessage(LEGACY_SESSION_LIST_WS_EVENT.FETCH_RESERVATIONS)
+  legacyHandleFetchReservations(client: Socket): void {
+    client.emit(LEGACY_SESSION_LIST_WS_EVENT.RESERVATIONS, this.getSessionListJson());
+  }
+
   @SubscribeMessage(SESSION_LIST_WS_EVENT.FETCH_RESERVATIONS)
-  async handleFetchReservations(client: Socket): Promise<any> {
-    const currentReservation = this.sessionRuntimeManager
-      .getSessionListStatus()
-      .map((session) => SessionWebSocketMapper.toPayload(session));
-    client.emit(
-      SESSION_LIST_WS_EVENT.RESERVATIONS,
-      JSON.stringify(currentReservation),
-    );
+  async handleFetchReservations(client: Socket): Promise<void> {
+    client.emit(SESSION_LIST_WS_EVENT.RESERVATIONS, this.getSessionListJson());
   }
 }
