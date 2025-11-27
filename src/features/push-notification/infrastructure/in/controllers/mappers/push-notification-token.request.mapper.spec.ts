@@ -24,4 +24,15 @@ describe('PushNotificationTokenRequestMapper', () => {
       pushEnable: undefined,
     });
   });
+
+  it('pushEnable만 전달된 DTO도 params로 변환한다', () => {
+    const params = PushNotificationTokenRequestMapper.toUpdateParams({
+      pushEnable: false,
+    });
+
+    expect(params).toEqual({
+      notificationToken: undefined,
+      pushEnable: false,
+    });
+  });
 });

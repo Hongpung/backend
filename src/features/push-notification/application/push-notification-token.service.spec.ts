@@ -19,7 +19,10 @@ const isExpoPushTokenMock = Expo.isExpoPushToken as jest.MockedFunction<
 describe('PushNotificationTokenService', () => {
   let service: PushNotificationTokenService;
   let tokenRepository: jest.Mocked<
-    Pick<INotificationTokenRepository, 'saveToken' | 'removeToken'>
+    Pick<
+      INotificationTokenRepository,
+      'saveToken' | 'removeToken' | 'findOneNotificationToken' | 'updatePushEnable'
+    >
   >;
   let memberLookup: jest.Mocked<
     Pick<IPushNotificationMemberLookup, 'existsMember'>
@@ -31,6 +34,8 @@ describe('PushNotificationTokenService', () => {
     tokenRepository = {
       saveToken: jest.fn(),
       removeToken: jest.fn(),
+      findOneNotificationToken: jest.fn(),
+      updatePushEnable: jest.fn(),
     };
 
     memberLookup = {
@@ -54,9 +59,16 @@ describe('PushNotificationTokenService', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('토큰이 비어 있으면 BadRequestException', async () => {
+    it('토큰과 pushEnable이 모두 없으면 BadRequestException', async () => {
       memberLookup.existsMember.mockResolvedValue(true);
-      isExpoPushTokenMock.mockReturnValue(true);
+
+      await expect(
+        service.updatePushNotificationToken(1, {}),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('토큰이 비어 있고 pushEnable도 없으면 BadRequestException', async () => {
+      memberLookup.existsMember.mockResolvedValue(true);
 
       await expect(
         service.updatePushNotificationToken(1, { notificationToken: '   ' }),
@@ -89,6 +101,36 @@ describe('PushNotificationTokenService', () => {
         notificationToken: 'ExponentPushToken[ok]',
         pushEnable: true,
       });
+    });
+
+    it('pushEnable만 false이면 기존 토큰을 유지하고 수신을 끈다', async () => {
+      memberLookup.existsMember.mockResolvedValue(true);
+      const { UserNotificationTokenEntity } = await import(
+        '../domain/user-notification-token.entity'
+      );
+      const entity = new UserNotificationTokenEntity(
+        1,
+        'ExponentPushToken[existing]',
+        true,
+      );
+      tokenRepository.findOneNotificationToken.mockResolvedValue(entity);
+
+      await expect(
+        service.updatePushNotificationToken(1, { pushEnable: false }),
+      ).resolves.toEqual({ message: '알림 수신 설정이 변경되었습니다.' });
+
+      expect(tokenRepository.updatePushEnable).toHaveBeenCalledWith(entity);
+      expect(entity.pushEnable).toBe(false);
+      expect(tokenRepository.saveToken).not.toHaveBeenCalled();
+    });
+
+    it('pushEnable만 true인데 등록된 토큰이 없으면 BadRequestException', async () => {
+      memberLookup.existsMember.mockResolvedValue(true);
+      tokenRepository.findOneNotificationToken.mockResolvedValue(null);
+
+      await expect(
+        service.updatePushNotificationToken(1, { pushEnable: true }),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 

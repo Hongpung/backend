@@ -58,14 +58,39 @@ describe('MemberAuthControllerRequestMapper', () => {
     });
   });
 
-  it('toLogoutParams는 dto 없을 때 sessionId만 전달한다', () => {
+  it('toLoginParams는 deviceId가 없으면 undefined를 전달한다', () => {
+    const req = { headers: {}, ip: '127.0.0.1' } as Request;
+
+    expect(
+      MemberAuthControllerRequestMapper.toLoginParams(
+        {
+          email: 'a@test.com',
+          password: 'pw',
+          rememberMe: false,
+          autoLogin: true,
+        } as never,
+        req,
+      ),
+    ).toEqual({
+      email: 'a@test.com',
+      password: 'pw',
+      deviceId: undefined,
+      deviceName: null,
+      rememberMe: false,
+      autoLogin: true,
+      userAgent: null,
+      ipAddress: '127.0.0.1',
+    });
+  });
+
+  it('toLogoutParams는 dto 없을 때 clearPushTokens를 true로 기본 설정한다', () => {
     expect(
       MemberAuthControllerRequestMapper.toLogoutParams(undefined, 'sess-1'),
     ).toEqual({
       refreshToken: undefined,
       sessionId: 'sess-1',
       deviceId: undefined,
-      clearPushTokens: undefined,
+      clearPushTokens: true,
     });
   });
 });

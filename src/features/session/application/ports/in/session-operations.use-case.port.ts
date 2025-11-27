@@ -13,11 +13,11 @@ export interface SessionOperationsUseCasePort {
   isValidUser(userId: number): boolean;
   extendSession(
     userId: number,
-    sessionId: string,
+    sessionId?: string,
   ): Promise<SessionOperationResultVo>;
   endSession(
     userId: number,
-    sessionId: string,
+    sessionId: string | undefined,
     returnImageUrls: string[],
   ): Promise<EndSessionResultVo>;
 }

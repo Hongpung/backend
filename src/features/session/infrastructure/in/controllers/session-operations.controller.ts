@@ -66,9 +66,10 @@ export class SessionOperationController {
   @Post('extend')
   @ApiOperation({
     summary: '세션 연장',
-    description: '지정한 런타임 세션 ID의 연습을 연장합니다.',
+    description:
+      '지정한 런타임 세션 ID의 연습을 연장합니다. sessionId 생략 시 현재 ONAIR 세션을 사용합니다.',
   })
-  @ApiBody({ type: ExtendSessionReqDto })
+  @ApiBody({ type: ExtendSessionReqDto, required: false })
   @ApiExtraModels(SessionOperationSuccessResDto, SessionOperationFailResDto)
   @ApiOkResponse({
     description: '세션 연장 성공/실패',
@@ -81,7 +82,7 @@ export class SessionOperationController {
   })
   @ApiResponse({ status: 401, description: '인증되지 않은 사용자' })
   async getSessionInfo(
-    @Body() body: ExtendSessionReqDto,
+    @Body() body: ExtendSessionReqDto = {},
     @Req() req: Request,
   ): Promise<SessionOperationResultResDto> {
     const { memberId } = req.user;
@@ -95,7 +96,8 @@ export class SessionOperationController {
   @Post('end')
   @ApiOperation({
     summary: '세션 종료',
-    description: '사용자의 세션을 종료합니다.',
+    description:
+      '사용자의 세션을 종료합니다. sessionId 생략 시 현재 ONAIR 세션을 사용합니다.',
   })
   @ApiBody({ type: EndSessionReqDto })
   @ApiExtraModels(EndSessionSuccessResDto, EndSessionFailResDto)

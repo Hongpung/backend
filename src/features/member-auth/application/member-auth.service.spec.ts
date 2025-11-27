@@ -200,6 +200,33 @@ describe('MemberAuthService', () => {
       );
     });
 
+    it('deviceId가 없으면 액세스 토큰만 발급하고 디바이스·리프레시·신규 기기 알림을 생략한다', async () => {
+      repository.findAuthByEmail.mockResolvedValue(authEntity);
+      compareMock.mockResolvedValue(true);
+      repository.findMemberForLogin.mockResolvedValue({
+        clubId: 7,
+        canLogin: true,
+      });
+
+      await expect(
+        service.login({
+          email: 'u@test.com',
+          password: 'ok',
+        }),
+      ).resolves.toEqual({
+        token: 'access-jwt',
+        refreshToken: '',
+      });
+
+      expect(sessionRepository.upsertDeviceOnLogin).not.toHaveBeenCalled();
+      expect(sessionRepository.createRefreshToken).not.toHaveBeenCalled();
+      expect(domainEvents.publishNewDeviceLoginNotification).not.toHaveBeenCalled();
+      expect(signAsync).toHaveBeenCalledWith(
+        authEntity.toJwtPayload({ clubId: 7 }),
+        { expiresIn: '15m' },
+      );
+    });
+
     it('rememberMe 또는 autoLogin이 true이면 refresh에 rememberMe가 true이다', async () => {
       repository.findAuthByEmail.mockResolvedValue(authEntity);
       compareMock.mockResolvedValue(true);

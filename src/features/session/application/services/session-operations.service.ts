@@ -68,9 +68,18 @@ export class SessionOperationsService implements SessionOperationsUseCasePort {
 
   async extendSession(
     userId: number,
-    sessionId: string,
+    sessionId?: string,
   ): Promise<SessionOperationResultVo> {
-    const session = this.sessionRuntimeManager.getSessionById(sessionId);
+    const resolvedSessionId = this.resolveOnAirSessionId(sessionId);
+    if (!resolvedSessionId) {
+      return {
+        message: 'FAIL',
+        reason: 'NOT_FOUND',
+        extendBlockedReason: 'NO_CURRENT_SESSION',
+      };
+    }
+
+    const session = this.sessionRuntimeManager.getSessionById(resolvedSessionId);
     if (!session) {
       return {
         message: 'FAIL',
@@ -100,7 +109,7 @@ export class SessionOperationsService implements SessionOperationsUseCasePort {
     }
 
     const onAir = this.sessionRuntimeManager.getCurrentSessionStatus();
-    if (!onAir || String(onAir.sessionId) !== String(sessionId)) {
+    if (!onAir || String(onAir.sessionId) !== String(resolvedSessionId)) {
       return {
         message: 'FAIL',
         reason: 'NOT_ALLOWED',
@@ -135,10 +144,19 @@ export class SessionOperationsService implements SessionOperationsUseCasePort {
 
   async endSession(
     userId: number,
-    sessionId: string,
+    sessionId: string | undefined,
     returnImageUrls: string[],
   ): Promise<EndSessionResultVo> {
-    const session = this.sessionRuntimeManager.getSessionById(sessionId);
+    const resolvedSessionId = this.resolveOnAirSessionId(sessionId);
+    if (!resolvedSessionId) {
+      return {
+        message: 'FAIL',
+        reason: 'NOT_FOUND',
+        endBlockedReason: 'NO_CURRENT_SESSION',
+      };
+    }
+
+    const session = this.sessionRuntimeManager.getSessionById(resolvedSessionId);
     if (!session) {
       return {
         message: 'FAIL',
@@ -171,7 +189,7 @@ export class SessionOperationsService implements SessionOperationsUseCasePort {
     }
 
     const onAir = this.sessionRuntimeManager.getCurrentSessionStatus();
-    if (!onAir || String(onAir.sessionId) !== String(sessionId)) {
+    if (!onAir || String(onAir.sessionId) !== String(resolvedSessionId)) {
       return {
         message: 'FAIL',
         reason: 'NOT_ALLOWED',
@@ -337,6 +355,20 @@ export class SessionOperationsService implements SessionOperationsUseCasePort {
     });
 
     return { status: 'success', sessionLogId };
+  }
+
+  private resolveOnAirSessionId(sessionId?: string): string | null {
+    const trimmed = sessionId?.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+
+    const onAir = this.sessionRuntimeManager.getCurrentSessionStatus();
+    if (!onAir || onAir.status !== 'ONAIR') {
+      return null;
+    }
+
+    return String(onAir.sessionId);
   }
 
   private isUserAttendingSession(

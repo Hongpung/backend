@@ -17,11 +17,14 @@ export class LoginReqDto {
   password: string;
 
   @ApiProperty({
-    description: '앱에서 생성한 디바이스 UUID',
+    description:
+      '앱에서 생성한 디바이스 UUID (v1 호환: 생략 시 액세스 토큰만 발급, 디바이스·리프레시·신규 기기 알림 없음)',
     example: '550e8400-e29b-41d4-a716-446655440000',
+    required: false,
   })
+  @IsOptional()
   @IsUUID()
-  deviceId: string;
+  deviceId?: string;
 
   @ApiProperty({
     description: '표시용 기기 이름',

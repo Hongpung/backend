@@ -43,7 +43,7 @@ export class MemberAuthControllerRequestMapper {
     return {
       email: dto.email,
       password: dto.password,
-      deviceId: dto.deviceId,
+      deviceId: dto.deviceId?.trim() || undefined,
       deviceName: dto.deviceName ?? null,
       rememberMe: dto.rememberMe,
       autoLogin: dto.autoLogin,
@@ -71,7 +71,7 @@ export class MemberAuthControllerRequestMapper {
       refreshToken: dto?.refreshToken,
       sessionId: sessionIdFromAccessToken,
       deviceId: dto?.deviceId,
-      clearPushTokens: dto?.clearPushTokens,
+      clearPushTokens: dto?.clearPushTokens ?? true,
     };
   }
 

@@ -1,12 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUUID } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class ExtendSessionReqDto {
-  @ApiProperty({
-    description: '연장할 런타임 세션 ID (체크인·세션 목록과 동일한 UUID)',
+  @ApiPropertyOptional({
+    description:
+      '연장할 런타임 세션 ID (v1 호환: 생략 시 현재 ONAIR 세션)',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
+  @IsOptional()
   @IsString()
   @IsUUID('4')
-  sessionId: string;
+  sessionId?: string;
 }

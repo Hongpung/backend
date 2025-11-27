@@ -109,15 +109,15 @@ export class MemberAuthService implements MemberAuthUseCasePort {
   async login(params: {
     email: string;
     password: string;
-    deviceId: string;
+    deviceId?: string;
     deviceName?: string | null;
     rememberMe?: boolean;
     autoLogin?: boolean;
     userAgent?: string | null;
     ipAddress?: string | null;
   }): Promise<{ token: string; refreshToken: string }> {
-    const { email, password, deviceId, deviceName, userAgent, ipAddress } =
-      params;
+    const { email, password, deviceName, userAgent, ipAddress } = params;
+    const deviceId = params.deviceId?.trim() || undefined;
 
     const rememberMe = params.rememberMe ?? params.autoLogin ?? false;
 
@@ -146,6 +146,15 @@ export class MemberAuthService implements MemberAuthUseCasePort {
         message: "You're not accepted",
         errorCode: 'USER_NOT_APPROVED',
       });
+    }
+
+    if (!deviceId) {
+      const token = await this.jwtService.signAsync(
+        authInfo.toJwtPayload({ clubId: memberInfo.clubId }),
+        { expiresIn: ACCESS_TOKEN_EXPIRES_IN },
+      );
+
+      return { token, refreshToken: '' };
     }
 
     const { isNewDevice } = await this.sessionRepository.upsertDeviceOnLogin({

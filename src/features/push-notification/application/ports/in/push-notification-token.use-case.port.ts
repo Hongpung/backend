@@ -3,7 +3,7 @@ export const PushNotificationTokenUseCasePort = Symbol(
 );
 
 export interface UpdatePushNotificationTokenParams {
-  notificationToken: string;
+  notificationToken?: string;
   pushEnable?: boolean;
 }
 

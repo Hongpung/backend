@@ -15,7 +15,7 @@ export interface MemberAuthUseCasePort {
   login(params: {
     email: string;
     password: string;
-    deviceId: string;
+    deviceId?: string;
     deviceName?: string | null;
     rememberMe?: boolean;
     autoLogin?: boolean;

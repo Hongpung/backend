@@ -108,6 +108,26 @@ describeIntegration('PushNotificationTokenService (통합)', () => {
       expect(row?.notificationToken).toBe(validToken);
       expect(row?.pushEnable).toBe(true);
     });
+
+    it('pushEnable만 false이면 기존 토큰을 유지한다', async () => {
+      await prisma.member.update({
+        where: { memberId },
+        data: { notificationToken: validToken, pushEnable: true },
+      });
+
+      const result = await service.updatePushNotificationToken(memberId, {
+        pushEnable: false,
+      });
+
+      expect(result).toEqual({ message: '알림 수신 설정이 변경되었습니다.' });
+
+      const row = await prisma.member.findUnique({
+        where: { memberId },
+        select: { notificationToken: true, pushEnable: true },
+      });
+      expect(row?.notificationToken).toBe(validToken);
+      expect(row?.pushEnable).toBe(false);
+    });
   });
 
   describe('clearPushNotificationToken', () => {

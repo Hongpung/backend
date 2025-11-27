@@ -39,22 +39,48 @@ export class PushNotificationTokenService
       throw new NotFoundException(`MemberId: '${memberId}' is not exist`);
     }
 
-    const { notificationToken, pushEnable } = params;
+    const notificationToken = params.notificationToken?.trim();
+    const { pushEnable } = params;
 
-    if (!notificationToken?.trim()) {
-      throw new BadRequestException('알림 토큰은 필수입니다.');
+    if (!notificationToken && pushEnable === undefined) {
+      throw new BadRequestException(
+        'notificationToken 또는 pushEnable 중 하나는 필요합니다.',
+      );
     }
 
-    if (!Expo.isExpoPushToken(notificationToken)) {
-      throw new BadRequestException('유효하지 않은 Expo 푸시 토큰 형식입니다.');
+    if (notificationToken) {
+      if (!Expo.isExpoPushToken(notificationToken)) {
+        throw new BadRequestException('유효하지 않은 Expo 푸시 토큰 형식입니다.');
+      }
+
+      await this.tokenRepository.saveToken(memberId, {
+        notificationToken,
+        pushEnable: pushEnable ?? true,
+      });
+
+      return { message: '알림 토큰이 등록되었습니다.' };
     }
 
-    await this.tokenRepository.saveToken(memberId, {
-      notificationToken: notificationToken.trim(),
-      pushEnable: pushEnable ?? true,
-    });
+    const entity = await this.tokenRepository.findOneNotificationToken(memberId);
+    if (!entity) {
+      throw new BadRequestException('등록된 알림 토큰이 없습니다.');
+    }
 
-    return { message: '알림 토큰이 등록되었습니다.' };
+    if (pushEnable) {
+      try {
+        entity.enablePush();
+      } catch {
+        throw new BadRequestException(
+          '푸시 수신 활성화 불가: 토큰이 등록되지 않았습니다.',
+        );
+      }
+    } else {
+      entity.disablePush();
+    }
+
+    await this.tokenRepository.updatePushEnable(entity);
+
+    return { message: '알림 수신 설정이 변경되었습니다.' };
   }
 
   async clearPushNotificationToken(
