@@ -1,9 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  UnauthorizedException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import {
   ClubRepositoryPort,
   type IClubRepository,
@@ -14,7 +9,6 @@ import type {
   Instrument,
   ClubPrimaryMember,
 } from '../models/club.model';
-import { createClubPrimaryMember } from '../models/club.model';
 
 @Injectable()
 export class ClubMemberService {
@@ -49,24 +43,7 @@ export class ClubMemberService {
       throw new UnauthorizedException("invalid Request: Doesn't exist club");
     }
 
-    const primaryMembers = club.primaryMembers ?? [];
-    if (primaryMembers.length > 0) {
-      return primaryMembers;
-    }
-
-    const members = club.members ?? [];
-    if (members.length === 0) {
-      throw new NotFoundException(
-        '동아리에 멤버가 없어 주요 활동 멤버를 지정할 수 없습니다.',
-      );
-    }
-
-    return [
-      createClubPrimaryMember({
-        member: members[0],
-        updatedAt: new Date(),
-      }),
-    ];
+    return club.primaryMembers ?? [];
   }
 
   async getClubInstruments(clubId: number): Promise<Instrument[]> {

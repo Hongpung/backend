@@ -1,5 +1,5 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import { ClubMemberService } from './club-member.service';
 import type { Club } from '../models/club.model';
 import {
@@ -95,44 +95,16 @@ describe('ClubMemberService', () => {
       await expect(service.getClubPrimaryMembers(1)).resolves.toEqual([pm]);
     });
 
-    it('주요 멤버가 비어 있으면 첫 번째 동아리 멤버로 합성하여 반환한다', async () => {
-      jest.useFakeTimers();
-      jest.setSystemTime(new Date('2025-03-15T12:00:00.000Z'));
-      try {
-        const first = makeMember(101);
-        const second = makeMember(102);
-        const club = createClub({
-          clubId: 1,
-          clubName: 'C',
-          primaryMembers: [],
-          members: [first, second],
-        });
-        repository.findClubById.mockResolvedValue(club);
-
-        const result = await service.getClubPrimaryMembers(1);
-
-        expect(result).toHaveLength(1);
-        expect(result[0].member).toBe(first);
-        expect(result[0].updatedAt).toEqual(
-          new Date('2025-03-15T12:00:00.000Z'),
-        );
-      } finally {
-        jest.useRealTimers();
-      }
-    });
-
-    it('주요 멤버도 없고 동아리 멤버도 없으면 NotFoundException을 던진다', async () => {
+    it('주요 멤버가 비어 있으면 빈 배열을 반환한다', async () => {
       const club = createClub({
         clubId: 1,
         clubName: 'C',
         primaryMembers: [],
-        members: [],
+        members: [makeMember(101), makeMember(102)],
       });
       repository.findClubById.mockResolvedValue(club);
 
-      await expect(service.getClubPrimaryMembers(1)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(service.getClubPrimaryMembers(1)).resolves.toEqual([]);
     });
   });
 });
