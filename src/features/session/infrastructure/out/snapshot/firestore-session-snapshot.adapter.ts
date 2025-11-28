@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import {
   SessionEntity,
@@ -17,9 +18,17 @@ export class FirestoreSessionSnapshotAdapter
   private readonly db: admin.firestore.Firestore;
   private readonly docRef: admin.firestore.DocumentReference;
 
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     this.db = admin.firestore();
-    this.docRef = this.db.collection('session_snapshots').doc('latest');
+    const collection = this.configService.get<string>(
+      'SESSION_SNAPSHOT_FIRESTORE_COLLECTION',
+      'session_snapshots',
+    );
+    const documentId = this.configService.get<string>(
+      'SESSION_SNAPSHOT_FIRESTORE_DOCUMENT',
+      'latest',
+    );
+    this.docRef = this.db.collection(collection).doc(documentId);
   }
 
   async save(sessions: SessionEntity[]): Promise<void> {

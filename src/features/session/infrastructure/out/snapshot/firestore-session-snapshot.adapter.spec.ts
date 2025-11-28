@@ -1,5 +1,6 @@
 import { FirestoreSessionSnapshotAdapter } from './firestore-session-snapshot.adapter';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SessionCacheMapper } from '../cache/mappers/session-cache.mapper';
 import { SessionRestoreMapper } from '../mappers/session.persistence.mapper';
 import { SessionEntity } from '../../../application/ports/out/session-snapshot-store.port';
@@ -63,6 +64,17 @@ const mockReservationSession = ReservationSession.create({
 describe('FirestoreSessionSnapshotAdapter', () => {
   let adapter: FirestoreSessionSnapshotAdapter;
   let logger: Logger;
+  const configService = {
+    get: jest.fn((key: string, defaultValue?: string) => {
+      if (key === 'SESSION_SNAPSHOT_FIRESTORE_COLLECTION') {
+        return 'session_snapshots';
+      }
+      if (key === 'SESSION_SNAPSHOT_FIRESTORE_DOCUMENT') {
+        return 'latest';
+      }
+      return defaultValue;
+    }),
+  } as unknown as ConfigService;
 
   beforeEach(() => {
     // Reset all mocks before each test
@@ -75,7 +87,7 @@ describe('FirestoreSessionSnapshotAdapter', () => {
     jest.spyOn(logger, 'warn').mockImplementation(() => {});
 
     // Instantiate the adapter after mocks are set up
-    adapter = new FirestoreSessionSnapshotAdapter();
+    adapter = new FirestoreSessionSnapshotAdapter(configService);
 
     // Manually assign the mocked logger instance
     (adapter as any)['logger'] = logger;
