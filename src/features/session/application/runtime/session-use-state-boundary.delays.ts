@@ -5,7 +5,7 @@ import {
 import { AppKstDateTime } from 'src/common/time-format/app-kst-datetime';
 
 export type SessionUseStateBoundaryDelays = {
-  /** 시작 후 15분 — 수동 종료 가능 시점 */
+  /** 시작 후 N분 — 수동 종료 가능 시점 (END_SESSION_MIN_ELAPSED_MS) */
   endAvailableDelayMs: number | null;
   /** 종료 15분 전 — 연장 불가 시점 */
   extendUnavailableDelayMs: number | null;

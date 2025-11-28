@@ -4,7 +4,7 @@ export const BASIC_TIME_INTERVAL = 30 * 60 * 1000;
 export const ALARM_BEFORE_END_MS = 10 * 60 * 1000;
 
 /** 세션 수동 종료 가능: 시작 후 N분 지나야 종료 가능 (밀리초) */
-export const END_SESSION_MIN_ELAPSED_MS = 1 * 60 * 1000;
+export const END_SESSION_MIN_ELAPSED_MS = 15 * 60 * 1000;
 
 /** 세션 연장 가능: 종료까지 N분 이상 남아있어야 연장 가능 (밀리초) */
 export const EXTEND_SESSION_MIN_REMAINING_MS = 15 * 60 * 1000;
