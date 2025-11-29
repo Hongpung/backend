@@ -93,9 +93,9 @@ export function syncDailyReservationsJobId(calendarDateYmd: string): string {
  */
 export function getSessionJobId(
   type: SessionJobType,
-  sessionId: string,
+  sessionId: string | number,
 ): string {
-  return sessionJobId[type](sessionId);
+  return sessionJobId[type](String(sessionId));
 }
 
 /**

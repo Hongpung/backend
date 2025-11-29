@@ -45,6 +45,7 @@ describe('SessionRuntimeManager', () => {
         .mockImplementation(async () => {}),
       removeForceEndJob: jest.fn().mockImplementation(async () => {}),
       removeForceEndAlarmJob: jest.fn().mockImplementation(async () => {}),
+      removeAllSessionEndTimedJobs: jest.fn().mockImplementation(async () => {}),
       rescheduleForceEndJob: jest.fn().mockImplementation(async () => {}),
     };
 

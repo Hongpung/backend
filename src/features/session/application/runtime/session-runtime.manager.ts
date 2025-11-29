@@ -120,13 +120,10 @@ export class SessionRuntimeManager implements SessionRuntimePort {
         if (action.session.status === 'ONAIR') {
           action.session.end();
         }
-        await this.sessionJobPort.removeForceEndJob(sessionId);
-        await this.sessionJobPort.removeForceEndAlarmJob(sessionId);
-        await this.removeSessionUseStateBoundaryJobs(sessionId);
+        await this.clearSessionEndTimedJobs(sessionId);
         return;
       case 'SCHEDULE_FORCE_END':
-        await this.sessionJobPort.removeForceEndJob(sessionId);
-        await this.sessionJobPort.removeForceEndAlarmJob(sessionId);
+        await this.clearSessionEndTimedJobs(sessionId);
         await this.sessionJobPort.addForceEndJob(
           sessionId,
           action.session,
@@ -314,6 +311,10 @@ export class SessionRuntimeManager implements SessionRuntimePort {
   ): Promise<void> {
     await this.sessionJobPort.removeSessionEndAvailableJob(sessionId);
     await this.sessionJobPort.removeSessionExtendUnavailableJob(sessionId);
+  }
+
+  async clearSessionEndTimedJobs(sessionId: string | number): Promise<void> {
+    await this.sessionJobPort.removeAllSessionEndTimedJobs(sessionId);
   }
 
   private async scheduleSessionUseStateBoundaryJobs(
@@ -718,25 +719,30 @@ export class SessionRuntimeManager implements SessionRuntimePort {
     }
   }
 
-  async endSession(): Promise<SessionEntity | void> {
+  async endSessionById(
+    expectedSessionId: string,
+  ): Promise<SessionEntity | void> {
     const release = await this.mutex.acquire();
     try {
-      const currentSession = this.getCurrentSession();
-      if (!currentSession) return;
+      const session = this.getSessionById(expectedSessionId);
+      if (!session || session.status !== 'ONAIR') {
+        return;
+      }
 
-      currentSession.end();
+      if (
+        !(
+          session instanceof RealtimeSession ||
+          session instanceof ReservationSession
+        )
+      ) {
+        return;
+      }
 
-      await this.sessionJobPort.removeForceEndJob(currentSession.sessionId);
-      await this.sessionJobPort.removeForceEndAlarmJob(
-        currentSession.sessionId,
-      );
-      await this.removeSessionUseStateBoundaryJobs(
-        String(currentSession.sessionId),
-      );
-
+      session.end();
+      await this.clearSessionEndTimedJobs(expectedSessionId);
       await this.eventPublisher.publishSessionListChangedAsync();
 
-      return currentSession;
+      return session;
     } finally {
       release();
     }
@@ -755,13 +761,7 @@ export class SessionRuntimeManager implements SessionRuntimePort {
       }
 
       currentSession.end();
-      await this.sessionJobPort.removeForceEndJob(currentSession.sessionId);
-      await this.sessionJobPort.removeForceEndAlarmJob(
-        currentSession.sessionId,
-      );
-      await this.removeSessionUseStateBoundaryJobs(
-        String(currentSession.sessionId),
-      );
+      await this.clearSessionEndTimedJobs(expectedSessionId);
       this.eventPublisher.publishSessionListChanged();
       return true;
     } finally {

@@ -19,6 +19,8 @@ export interface SessionJobPort {
   ): Promise<void>;
   removeForceEndJob(sessionId: string): Promise<void>;
   removeForceEndAlarmJob(sessionId: string): Promise<void>;
+  /** force-end·alarm·usage-control 경계 job 일괄 제거 */
+  removeAllSessionEndTimedJobs(sessionId: string | number): Promise<void>;
   rescheduleForceEndJob(
     sessionId: string,
     data: ForceEndJobData,

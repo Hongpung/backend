@@ -224,19 +224,26 @@ export class SessionOperationsService implements SessionOperationsUseCasePort {
       };
     }
 
+    // persist 성공 직후 job 제거 — runtime end 실패·재시작에도 orphan job 방지
+    await this.sessionRuntimeManager.clearSessionEndTimedJobs(resolvedSessionId);
+
     const endedSession = await retryRuntimeEnd(
-      () => this.sessionRuntimeManager.endSession(),
+      () => this.sessionRuntimeManager.endSessionById(resolvedSessionId),
       (value): value is RealtimeSession | ReservationSession => {
         if (typeof value === 'undefined') {
           return false;
         }
-        return String(value.sessionId) === String(sessionId);
+        return String(value.sessionId) === String(resolvedSessionId);
       },
     );
 
     if (!endedSession) {
-      const afterEnd = this.sessionRuntimeManager.getSessionById(sessionId);
+      const afterEnd =
+        this.sessionRuntimeManager.getSessionById(resolvedSessionId);
       if (afterEnd?.status === 'AFTER') {
+        await this.sessionRuntimeManager.clearSessionEndTimedJobs(
+          resolvedSessionId,
+        );
         return {
           message: 'FAIL',
           reason: 'NOT_ALLOWED',
@@ -288,6 +295,9 @@ export class SessionOperationsService implements SessionOperationsUseCasePort {
     }
 
     if (session.status === 'AFTER') {
+      await this.sessionRuntimeManager.clearSessionEndTimedJobs(
+        payload.sessionId,
+      );
       this.logger.warn(
         `force end skipped: session already ended (sessionId=${payload.sessionId})`,
       );
@@ -323,17 +333,19 @@ export class SessionOperationsService implements SessionOperationsUseCasePort {
       };
     }
 
+    const sessionId = String(payload.sessionId);
+    await this.sessionRuntimeManager.clearSessionEndTimedJobs(sessionId);
+
     const runtimeEnded = await retryRuntimeEnd(
       () =>
-        this.sessionRuntimeManager.forceEndSessionIfMatching(payload.sessionId),
+        this.sessionRuntimeManager.forceEndSessionIfMatching(sessionId),
       (ok) => ok === true,
     );
 
     if (!runtimeEnded) {
-      const afterEnd = this.sessionRuntimeManager.getSessionById(
-        payload.sessionId,
-      );
+      const afterEnd = this.sessionRuntimeManager.getSessionById(sessionId);
       if (afterEnd?.status === 'AFTER') {
+        await this.sessionRuntimeManager.clearSessionEndTimedJobs(sessionId);
         return { status: 'skipped', skipReason: 'ALREADY_ENDED' };
       }
       return { status: 'failed', errorCode: 'RUNTIME_END_FAILED' };

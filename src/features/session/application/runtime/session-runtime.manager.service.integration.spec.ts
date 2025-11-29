@@ -43,6 +43,7 @@ describe('SessionRuntimeManager (통합)', () => {
       removeStartExternalReservationJob: jest.fn(async () => undefined),
       removeForceEndJob: jest.fn(async () => undefined),
       removeForceEndAlarmJob: jest.fn(async () => undefined),
+      removeAllSessionEndTimedJobs: jest.fn(async () => undefined),
       rescheduleForceEndJob: jest.fn(async () => undefined),
     };
 
@@ -210,8 +211,7 @@ describe('SessionRuntimeManager (통합)', () => {
       .getSessionListStatus()
       .find((s) => String(s.sessionId) === String(current!.sessionId));
     expect(ended?.status).toBe('AFTER');
-    expect(jobPort.removeForceEndJob).toHaveBeenCalledWith(current!.sessionId);
-    expect(jobPort.removeForceEndAlarmJob).toHaveBeenCalledWith(
+    expect(jobPort.removeAllSessionEndTimedJobs).toHaveBeenCalledWith(
       current!.sessionId,
     );
     expect(eventPublisher.publishSessionListChanged).toHaveBeenCalled();

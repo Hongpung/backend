@@ -18,6 +18,8 @@ describe('SessionProcessor', () => {
   let sessionRuntimeManager: {
     startExternalReservationSession: jest.Mock;
     applyNoShowDiscardReservation: jest.Mock;
+    getSessionById: jest.Mock;
+    clearSessionEndTimedJobs: jest.Mock;
   };
   let sessionEventPublisher: { publishSessionUpdate: jest.Mock };
   let sessionMessaging: {
@@ -43,6 +45,11 @@ describe('SessionProcessor', () => {
     sessionRuntimeManager = {
       startExternalReservationSession: jest.fn(async () => undefined),
       applyNoShowDiscardReservation: jest.fn(async () => undefined),
+      getSessionById: jest.fn(() => ({
+        sessionId: 'sid-alarm',
+        status: 'ONAIR',
+      })),
+      clearSessionEndTimedJobs: jest.fn(async () => undefined),
     };
     sessionEventPublisher = {
       publishSessionUpdate: jest.fn(),
@@ -248,6 +255,44 @@ describe('SessionProcessor', () => {
 
     expect(sessionMessaging.notifyForceEndAlarm).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: 'sid-alarm' }),
+    );
+  });
+
+  it('FORCE_END_ALARM은 세션이 ONAIR가 아니면 푸시하지 않고 job을 정리한다', async () => {
+    sessionRuntimeManager.getSessionById = jest.fn(() => ({
+      sessionId: 'sid-ended',
+      status: 'AFTER',
+    }));
+
+    const data: SessionWirePayload = {
+      sessionId: 'sid-ended',
+      sessionType: 'REALTIME',
+      date: '2026-06-01',
+      title: '연습',
+      startTime: '10:00',
+      endTime: '11:00',
+      extendCount: 0,
+      creatorName: 'c',
+      creatorId: 1,
+      participationAvailable: true,
+      status: 'ONAIR',
+      attendanceList: [],
+    };
+
+    const job = {
+      name: SESSION_JOB_TYPE.FORCE_END_ALARM,
+      data,
+    } as Job<
+      SessionWirePayload,
+      unknown,
+      typeof SESSION_JOB_TYPE.FORCE_END_ALARM
+    >;
+
+    await processor.process(job);
+
+    expect(sessionMessaging.notifyForceEndAlarm).not.toHaveBeenCalled();
+    expect(sessionRuntimeManager.clearSessionEndTimedJobs).toHaveBeenCalledWith(
+      'sid-ended',
     );
   });
 

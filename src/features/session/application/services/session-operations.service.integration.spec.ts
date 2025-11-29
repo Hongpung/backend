@@ -72,7 +72,8 @@ describe('SessionOperationsService (통합)', () => {
       isExtendAtMaxCap: jest.fn(() => false),
       getExtendMaxCapBlockedReason: jest.fn(() => null),
       extendSession: jest.fn(async () => undefined),
-      endSession: jest.fn(async () => onAirSession),
+      clearSessionEndTimedJobs: jest.fn(async () => undefined),
+      endSessionById: jest.fn(async () => onAirSession),
       forceEndSessionIfMatching: jest.fn(async () => true),
       getSessionById: jest.fn((id: string | number) =>
         String(id) === sessionId ? onAirSession : null,
@@ -242,13 +243,20 @@ describe('SessionOperationsService (통합)', () => {
       },
     });
     expect(endSessionRecord.record).toHaveBeenCalledTimes(1);
-    expect(sessionRuntime.endSession).toHaveBeenCalledTimes(1);
+    expect(sessionRuntime.clearSessionEndTimedJobs).toHaveBeenCalledWith(
+      sessionId,
+    );
+    expect(sessionRuntime.endSessionById).toHaveBeenCalledWith(sessionId);
+    expect(sessionRuntime.endSessionById).toHaveBeenCalledTimes(1);
     expect(eventPublisher.publishEndSession).toHaveBeenCalledTimes(1);
     const recordOrder = endSessionRecord.record.mock.invocationCallOrder[0];
-    const endOrder = sessionRuntime.endSession.mock.invocationCallOrder[0];
+    const clearJobsOrder =
+      sessionRuntime.clearSessionEndTimedJobs.mock.invocationCallOrder[0];
+    const endOrder = sessionRuntime.endSessionById.mock.invocationCallOrder[0];
     const publishOrder =
       eventPublisher.publishEndSession.mock.invocationCallOrder[0];
-    expect(recordOrder).toBeLessThan(endOrder);
+    expect(recordOrder).toBeLessThan(clearJobsOrder);
+    expect(clearJobsOrder).toBeLessThan(endOrder);
     expect(endOrder).toBeLessThan(publishOrder);
   });
 
@@ -267,7 +275,8 @@ describe('SessionOperationsService (통합)', () => {
     });
     expect(endSessionRecord.record).toHaveBeenCalledTimes(1);
     expect(endSessionRecord.rollback).not.toHaveBeenCalled();
-    expect(sessionRuntime.endSession).not.toHaveBeenCalled();
+    expect(sessionRuntime.clearSessionEndTimedJobs).not.toHaveBeenCalled();
+    expect(sessionRuntime.endSessionById).not.toHaveBeenCalled();
     expect(eventPublisher.publishEndSession).not.toHaveBeenCalled();
   });
 
@@ -309,7 +318,7 @@ describe('SessionOperationsService (통합)', () => {
     expect(endSessionRecord.rollback).toHaveBeenCalledWith(
       runtimeSessionIdForRollback,
     );
-    expect(sessionRuntime.endSession).not.toHaveBeenCalled();
+    expect(sessionRuntime.endSessionById).not.toHaveBeenCalled();
     expect(eventPublisher.publishEndSession).not.toHaveBeenCalled();
     const recordOrder = endSessionRecord.record.mock.invocationCallOrder[0];
     const rollbackOrder = endSessionRecord.rollback.mock.invocationCallOrder[0];
@@ -317,7 +326,7 @@ describe('SessionOperationsService (통합)', () => {
   });
 
   it('persist 성공 후 runtime end 실패 시 RUNTIME_END_FAILED를 반환한다', async () => {
-    sessionRuntime.endSession.mockResolvedValue(undefined);
+    sessionRuntime.endSessionById.mockResolvedValue(undefined);
     sessionRuntime.getSessionById.mockImplementation((id) =>
       String(id) === sessionId ? onAirSession : null,
     );
@@ -333,7 +342,10 @@ describe('SessionOperationsService (통합)', () => {
     });
     expect(endSessionRecord.record).toHaveBeenCalledTimes(1);
     expect(endSessionRecord.rollback).not.toHaveBeenCalled();
-    expect(sessionRuntime.endSession).toHaveBeenCalled();
+    expect(sessionRuntime.clearSessionEndTimedJobs).toHaveBeenCalledWith(
+      sessionId,
+    );
+    expect(sessionRuntime.endSessionById).toHaveBeenCalled();
     expect(eventPublisher.publishEndSession).not.toHaveBeenCalled();
   });
 
@@ -370,7 +382,7 @@ describe('SessionOperationsService (통합)', () => {
       endBlockedReason: 'ALREADY_ENDED',
     });
     expect(endSessionRecord.record).not.toHaveBeenCalled();
-    expect(sessionRuntime.endSession).not.toHaveBeenCalled();
+    expect(sessionRuntime.endSessionById).not.toHaveBeenCalled();
   });
 
   it('시작 후 최소 종료 대기 시간 미만이면 endSession이 MIN_ELAPSED_NOT_MET으로 거부된다', async () => {
@@ -388,7 +400,7 @@ describe('SessionOperationsService (통합)', () => {
       endBlockedReason: 'MIN_ELAPSED_NOT_MET',
     });
     expect(endSessionRecord.record).not.toHaveBeenCalled();
-    expect(sessionRuntime.endSession).not.toHaveBeenCalled();
+    expect(sessionRuntime.endSessionById).not.toHaveBeenCalled();
     expect(eventPublisher.publishEndSession).not.toHaveBeenCalled();
   });
 
@@ -409,16 +421,22 @@ describe('SessionOperationsService (통합)', () => {
 
     expect(result).toEqual({ status: 'success', sessionLogId: 99 });
     expect(endSessionRecord.record).toHaveBeenCalledTimes(1);
+    expect(sessionRuntime.clearSessionEndTimedJobs).toHaveBeenCalledWith(
+      sessionId,
+    );
     expect(sessionRuntime.forceEndSessionIfMatching).toHaveBeenCalledWith(
       sessionId,
     );
     expect(eventPublisher.publishEndSession).toHaveBeenCalledTimes(1);
     const recordOrder = endSessionRecord.record.mock.invocationCallOrder[0];
+    const clearJobsOrder =
+      sessionRuntime.clearSessionEndTimedJobs.mock.invocationCallOrder[0];
     const runtimeOrder =
       sessionRuntime.forceEndSessionIfMatching.mock.invocationCallOrder[0];
     const publishOrder =
       eventPublisher.publishEndSession.mock.invocationCallOrder[0];
-    expect(recordOrder).toBeLessThan(runtimeOrder);
+    expect(recordOrder).toBeLessThan(clearJobsOrder);
+    expect(clearJobsOrder).toBeLessThan(runtimeOrder);
     expect(runtimeOrder).toBeLessThan(publishOrder);
   });
 
@@ -626,7 +644,7 @@ describe('SessionOperationsService (통합)', () => {
         endBlockedReason: 'NO_CURRENT_SESSION',
       });
       expect(endSessionRecord.record).not.toHaveBeenCalled();
-      expect(sessionRuntime.endSession).not.toHaveBeenCalled();
+      expect(sessionRuntime.endSessionById).not.toHaveBeenCalled();
       expect(eventPublisher.publishEndSession).not.toHaveBeenCalled();
     });
 
@@ -667,7 +685,7 @@ describe('SessionOperationsService (통합)', () => {
         endBlockedReason: 'NO_CURRENT_SESSION',
       });
       expect(endSessionRecord.record).not.toHaveBeenCalled();
-      expect(sessionRuntime.endSession).not.toHaveBeenCalled();
+      expect(sessionRuntime.endSessionById).not.toHaveBeenCalled();
       expect(eventPublisher.publishEndSession).not.toHaveBeenCalled();
     });
 
@@ -704,7 +722,7 @@ describe('SessionOperationsService (통합)', () => {
         endBlockedReason: 'SESSION_ID_MISMATCH',
       });
       expect(endSessionRecord.record).not.toHaveBeenCalled();
-      expect(sessionRuntime.endSession).not.toHaveBeenCalled();
+      expect(sessionRuntime.endSessionById).not.toHaveBeenCalled();
       expect(eventPublisher.publishEndSession).not.toHaveBeenCalled();
     });
   });

@@ -19,7 +19,7 @@ export {
 export async function addSessionJob<T extends SessionJobType>(
   queue: Queue,
   type: T,
-  sessionId: string,
+  sessionId: string | number,
   payload: SessionJobPayload<T>,
   delay: number,
   options?: { attempts?: number; backoffMs?: number },
@@ -46,7 +46,7 @@ export async function addSessionJob<T extends SessionJobType>(
 export async function removeSessionJob(
   queue: Queue,
   type: SessionJobType,
-  sessionId: string,
+  sessionId: string | number,
 ): Promise<void> {
   const jobId = getSessionJobId(type, sessionId);
   const job = await queue.getJob(jobId);
@@ -54,7 +54,7 @@ export async function removeSessionJob(
   try {
     await job.remove();
   } catch {
-    // 이미 완료/삭제된 경우(race condition) 무시
+    // active·완료 직후 등 remove 불가 상태 — 호출부는 멱등하게 재시도 가능
   }
 }
 

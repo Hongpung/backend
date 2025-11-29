@@ -30,7 +30,8 @@ export interface SessionRuntimePort {
     user: SessionUser,
   ): Promise<AttendToSessionRuntimeResultVo | null>;
   extendSession(): Promise<void>;
-  endSession(): Promise<SessionEntity | void>;
+  clearSessionEndTimedJobs(sessionId: string | number): Promise<void>;
+  endSessionById(sessionId: string): Promise<SessionEntity | void>;
   forceEndSessionIfMatching(
     expectedSessionId: string | number,
   ): Promise<boolean>;

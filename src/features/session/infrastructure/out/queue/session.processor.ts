@@ -153,10 +153,22 @@ export class SessionProcessor extends WorkerHost {
       typeof SESSION_JOB_TYPE.FORCE_END_ALARM
     >,
   ): Promise<void> {
-    this.logger.log('force-end-alarm triggered');
-    await this.sessionMessaging.notifyForceEndAlarm(
-      SessionPushSnapshotMapper.fromWire(job.data),
+    const snapshot = SessionPushSnapshotMapper.fromWire(job.data);
+    const session = this.sessionRuntimeManager.getSessionById(
+      snapshot.sessionId,
     );
+    if (!session || session.status !== 'ONAIR') {
+      this.logger.warn(
+        `force-end-alarm skipped: session not ONAIR (sessionId=${snapshot.sessionId}, status=${session?.status ?? 'missing'})`,
+      );
+      await this.sessionRuntimeManager.clearSessionEndTimedJobs(
+        snapshot.sessionId,
+      );
+      return;
+    }
+
+    this.logger.log('force-end-alarm triggered');
+    await this.sessionMessaging.notifyForceEndAlarm(snapshot);
   }
 
   private async handleExternalReservationSession(

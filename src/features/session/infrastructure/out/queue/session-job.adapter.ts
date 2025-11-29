@@ -63,6 +63,16 @@ export class SessionJobAdapter implements SessionJobPort {
     );
   }
 
+  async removeAllSessionEndTimedJobs(sessionId: string | number): Promise<void> {
+    const id = String(sessionId);
+    await Promise.all([
+      this.removeForceEndJob(id),
+      this.removeForceEndAlarmJob(id),
+      this.removeSessionEndAvailableJob(id),
+      this.removeSessionExtendUnavailableJob(id),
+    ]);
+  }
+
   async rescheduleForceEndJob(
     sessionId: string,
     data: ForceEndJobData,
