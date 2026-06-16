@@ -7,8 +7,6 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["strictUndefinedChecks", "relationJoins"]
-  // 로컬(Mac) generate → Alpine Docker 이미지에 .prisma 복사 시 Linux 엔진 필요
-  binaryTargets   = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {

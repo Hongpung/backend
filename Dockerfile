@@ -1,21 +1,38 @@
-# 호스트에서 이미지 빌드 전 (Docker 안에서 nest build 하지 않음 — OOM 방지):
-#   npm ci
-#   npx prisma generate
-#   npm run build
-#   docker compose build app
+# 빌드: docker compose build app
+# prisma generate + nest build 는 builder 스테이지(Alpine) 안에서 실행
+
+FROM node:22-alpine AS builder
+WORKDIR /app
+
+RUN apk add --no-cache openssl
+
+COPY package*.json ./
+RUN npm ci
+
+COPY prisma ./prisma
+COPY src ./src
+COPY tsconfig.json tsconfig.build.json nest-cli.json ./
+
+# generate 시 schema env() 검증용 더미 (DB 연결 없음)
+ENV DATABASE_URL="mysql://build:build@127.0.0.1:3306/build"
+
+RUN npx prisma generate
+RUN npm run build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+
+RUN apk add --no-cache openssl
+
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# prisma CLI(devDependency) 없이 호스트에서 generate 한 결과만 복사
-COPY node_modules/.prisma ./node_modules/.prisma
-COPY dist ./dist
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/dist ./dist
 
-RUN test -f dist/src/main.js || (echo "dist 없음 — 호스트에서 npm run build 실행" >&2 && exit 1)
+RUN test -f dist/src/main.js || (echo "dist 없음 — docker build 실패" >&2 && exit 1)
 
 EXPOSE 8080
 # .env는 .dockerignore로 이미지에 포함하지 않음 → compose env_file 또는 docker run --env-file
