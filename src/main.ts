@@ -30,7 +30,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('홍풍 API 문서')
     .setDescription('홍풍 서비스의 API 문서입니다.')
-    .setVersion('1.0')
+    .setVersion('1.2.0')
     .addBearerAuth()
     .build();
 
