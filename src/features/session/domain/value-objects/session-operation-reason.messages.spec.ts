@@ -2,7 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 import {
   resolveSessionFailReasonMessageKo,
   toSessionBlockedReasonMessageKo,
-} from './session-operation-reason.messages';
+} from '../session-operation-reason.messages';
 
 describe('session-operation-reason.messages', () => {
   it('차단 사유 코드가 있으면 해당 한글 문구를 우선한다', () => {
@@ -11,7 +11,7 @@ describe('session-operation-reason.messages', () => {
         failureReason: 'NOT_ALLOWED',
         blockedReason: 'NEXT_RESERVATION_CONFLICT',
       }),
-    ).toBe('다음 예약이 있어 연장할 수 없어요.');
+    ).toBe('다음 예약 10분 전까지 연장했어요.');
   });
 
   it('차단 사유가 없으면 실패 분류 한글 문구를 쓴다', () => {
