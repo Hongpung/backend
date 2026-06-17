@@ -1,37 +1,44 @@
 services:
+  # env_file: .env.production (컨테이너). compose ${GHCR_OWNER} 등 치환은 루트 `.env` 자동 로드
+  # → EC2: ln -sf .env.production .env 한 번 (플래그 없이 up 가능)
   redis:
     image: redis:7-alpine
     container_name: hongpung-redis
     command: redis-server --appendonly yes
     expose:
-      - "6379"
+      - '6379'
     volumes:
       - redis-data:/data
     restart: always
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 3s
       retries: 5
 
   app:
-    image: ghcr.io/${GHCR_OWNER:-Hongpung}/hongpung-server:${APP_IMAGE_TAG:-1.2.0}
+    image: ghcr.io/${GHCR_OWNER:-hongpung}/hongpung-server:${APP_IMAGE_TAG:-master}
     pull_policy: always
     container_name: hongpung-app
     # 운영 host 네트워크: 아래 주석 해제 + app.environment의 REDIS_* 주석 처리 +
     # redis.ports "127.0.0.1:6379:6379" 해제 후 .env REDIS_HOST=127.0.0.1
     # network_mode: "host"
     ports:
-      - "8080:8080"
+      - '8080:8080'
     env_file:
-      - .env
+      - .env.production
     environment:
       # compose 내부 Redis (호스트에 6379 미노출). .env의 REDIS_HOST보다 우선
       REDIS_HOST: redis
-      REDIS_PORT: "6379"
+      REDIS_PORT: '6379'
     volumes:
       # secret/는 Git·이미지에 포함하지 않음 — 호스트 디렉터리를 런타임 마운트
       - ./secret:/app/secret:ro
+    # Docker(bridge) 안에서는 localhost ≠ EC2 호스트.
+    # .env DATABASE_URL 호스트를 host.docker.internal 로 두면 → 호스트의 MySQL(127.0.0.1:3306)로 연결.
+    # MySQL이 127.0.0.1 만 listen 하면 연결 거절될 수 있음 → bind-address=0.0.0.0 또는 RDS 호스트명 사용.
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     depends_on:
       redis:
         condition: service_healthy
@@ -40,19 +47,13 @@ services:
     restart: always
 
   prometheus:
-    image: ghcr.io/${GHCR_OWNER:-Hongpung}/hongpung-prometheus:${APP_IMAGE_TAG:-1.2.0}
+    image: ghcr.io/${GHCR_OWNER:-hongpung}/hongpung-prometheus:${APP_IMAGE_TAG:-master}
     pull_policy: always
     container_name: prometheus
     ports:
-      - "9090:9090"
+      - '9090:9090'
     env_file:
-      - .env
-    environment:
-      # 템플릿 치환용 (앱과 동일한 .env 값 사용)
-      - ENV_METRICS_USERNAME=${METRICS_USERNAME}
-      - ENV_METRICS_PASSWORD=${METRICS_PASSWORD}
-      # 스크래핑 대상: 같은 compose 내 앱 = app:8080, 호스트에서 앱 실행 = host.docker.internal:8080
-      - ENV_SCRAPE_TARGET=${ENV_SCRAPE_TARGET:-app:8080}
+      - .env.production
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml.template:ro
       - prometheus-data:/prometheus
@@ -64,7 +65,7 @@ services:
     container_name: loki
     command: -config.file=/etc/loki/local-config.yaml
     ports:
-      - "3100:3100"
+      - '3100:3100'
     volumes:
       - ./loki-config.yaml:/etc/loki/local-config.yaml:ro
       - ./loki-data:/loki
@@ -84,16 +85,13 @@ services:
     image: grafana/grafana:11.1.0
     container_name: grafana
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     env_file:
-      - .env
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - .env.production
     depends_on:
       - loki
       - prometheus
@@ -102,4 +100,3 @@ volumes:
   grafana-data:
   prometheus-data:
   redis-data:
-
