@@ -10,7 +10,7 @@ on:
       app_dir:
         description: "Deploy directory on EC2"
         required: true
-        default: "/opt/hongpung"
+        default: "/home/ubuntu/hongpung_server"
 
 permissions:
   contents: read
