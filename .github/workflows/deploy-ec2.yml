@@ -1,0 +1,56 @@
+name: Deploy to EC2
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Deploy image tag (ex: 1.2.0, sha-abc123)"
+        required: true
+        default: "1.2.0"
+      app_dir:
+        description: "Deploy directory on EC2"
+        required: true
+        default: "/opt/hongpung"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-ec2
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Prepare SSH key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf "%s" "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Prepare known_hosts
+        run: |
+          printf "%s\n" "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy on EC2 via SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          APP_IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+          APP_DIR: ${{ github.event.inputs.app_dir }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
+            -o StrictHostKeyChecking=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "set -euo pipefail; \
+             cd '${APP_DIR}'; \
+             export APP_IMAGE_TAG='${APP_IMAGE_TAG}'; \
+             docker compose pull; \
+             docker compose up -d --remove-orphans; \
+             docker compose ps"
