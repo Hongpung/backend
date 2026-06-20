@@ -144,6 +144,7 @@ import { ResponseValidationInterceptor } from 'src/common/validation/response-va
     ReservationEventPublisherPort,
     ReservationSchedulerReadPort,
     ReservationUpcomingNotificationService,
+    ReservationAdminCommandUseCasePort,
   ],
 })
 export class ReservationModule {}

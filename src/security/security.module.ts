@@ -7,6 +7,8 @@ import { VerifiedTokenGuard } from './presentation/guards/verified-token.guard';
 import { SessionListWsAuthGuard } from './presentation/guards/session-list-ws-auth.guard';
 import { OrGuard } from './presentation/guards/or.guard';
 import { AdminRoleGuard } from './presentation/guards/admin-role.guard';
+import { BffServiceAuthGuard } from './presentation/guards/bff-service-auth.guard';
+import { BffSdkKeyVerifierService } from './infrastructure/bff-sdk-key.verifier.service';
 
 /**
  * SessionControlWsAuthGuard는 SessionOperationsService에 의존하므로 SessionModule에서 제공.
@@ -28,6 +30,8 @@ import { AdminRoleGuard } from './presentation/guards/admin-role.guard';
     SessionListWsAuthGuard,
     OrGuard,
     AdminRoleGuard,
+    BffSdkKeyVerifierService,
+    BffServiceAuthGuard,
   ],
   exports: [
     JwtTokenVerifierService,
@@ -37,6 +41,8 @@ import { AdminRoleGuard } from './presentation/guards/admin-role.guard';
     SessionListWsAuthGuard,
     OrGuard,
     AdminRoleGuard,
+    BffSdkKeyVerifierService,
+    BffServiceAuthGuard,
   ],
 })
 export class SecurityModule {}

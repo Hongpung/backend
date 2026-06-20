@@ -5,3 +5,4 @@ export {
   MemberEmail,
   MemberClubId,
 } from './memberId-param.decorator';
+export { AdminId, AdminClubId, AdminRoleClaim } from './admin-id-param.decorator';

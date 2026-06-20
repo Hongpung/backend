@@ -33,6 +33,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor';
 import { MetricsModule } from './infrastructure/metrics/metrics.module';
 import { LiveSessionNotificationModule } from './features/live-session-notification/live-session-notification.module';
+import { AiModule } from './features/ai/ai.module';
 
 @Module({
   imports: [
@@ -108,6 +109,7 @@ import { LiveSessionNotificationModule } from './features/live-session-notificat
     PrismaModule,
     MailModule,
     UploadModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [
