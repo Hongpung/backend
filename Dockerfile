@@ -39,6 +39,28 @@ EXPOSE 8080
 CMD ["node", "/app/dist/src/main.js"]
 
 # ------------------------------------------------------------------------------
+# Prisma Studio (운영 DB 디버그용, compose --profile tools). 빌드: docker build --target studio -t hongpung-prisma-studio .
+# ------------------------------------------------------------------------------
+FROM node:22-alpine AS studio
+WORKDIR /app
+
+RUN apk add --no-cache openssl
+
+COPY package*.json ./
+RUN npm ci --omit=dev && npm install prisma@6.19.3
+
+COPY prisma ./prisma
+
+# generate 시 schema env() 검증용 더미 (DB 연결 없음)
+ENV DATABASE_URL="mysql://build:build@127.0.0.1:3306/build"
+
+RUN npx prisma generate
+
+EXPOSE 5555
+
+CMD ["npx", "prisma", "studio", "--schema=./prisma/schema.prisma", "--hostname=0.0.0.0", "--port=5555", "--browser", "none"]
+
+# ------------------------------------------------------------------------------
 # Prometheus (envsubst로 설정 치환 후 실행). 빌드: docker build --target prometheus -t hongpung-prometheus .
 # ------------------------------------------------------------------------------
 FROM prom/prometheus:v2.52.0 AS prom
