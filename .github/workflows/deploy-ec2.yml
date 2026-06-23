@@ -4,13 +4,18 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Deploy image tag (ex: 1.2.0, sha-abc123)"
+        description: "Deploy image tag (ex: master, 1.2.0, sha-abc123)"
         required: true
-        default: "1.2.0"
+        default: "master"
       app_dir:
         description: "Deploy directory on EC2"
         required: true
         default: "/home/ubuntu/hongpung_server"
+  # master push → CI(Publish Docker Images) 성공 후 자동 배포
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [master]
 
 permissions:
   contents: read
@@ -23,8 +28,25 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'master')
 
     steps:
+      - name: Resolve deploy parameters
+        id: params
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "image_tag=${{ github.event.inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+            echo "app_dir=${{ github.event.inputs.app_dir }}" >> "$GITHUB_OUTPUT"
+          else
+            # CI publish-images가 master 브랜치 ref 태그를 push함 (type=ref,event=branch)
+            echo "image_tag=master" >> "$GITHUB_OUTPUT"
+            echo "app_dir=/home/ubuntu/hongpung_server" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Prepare SSH key
         run: |
           mkdir -p ~/.ssh
@@ -42,15 +64,15 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-          APP_IMAGE_TAG: ${{ github.event.inputs.image_tag }}
-          APP_DIR: ${{ github.event.inputs.app_dir }}
+          APP_IMAGE_TAG: ${{ steps.params.outputs.image_tag }}
+          APP_DIR: ${{ steps.params.outputs.app_dir }}
         run: |
+          echo "Deploying image tag: ${APP_IMAGE_TAG} to ${APP_DIR}"
           ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT}" \
             -o StrictHostKeyChecking=yes \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "set -euo pipefail; \
              cd '${APP_DIR}'; \
              export APP_IMAGE_TAG='${APP_IMAGE_TAG}'; \
-             docker compose pull; \
-             docker compose up -d --remove-orphans; \
+             docker compose up -d --pull always --force-recreate --remove-orphans; \
              docker compose ps"

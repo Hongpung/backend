@@ -96,6 +96,22 @@ services:
       - loki
       - prometheus
 
+  # DB GUI — 평소 기동 안 함: docker compose --profile tools up prisma-studio
+  # EC2: DATABASE_URL 호스트는 host.docker.internal (app과 동일). 접속은 SSH 터널 → http://127.0.0.1:5555
+  prisma-studio:
+    profiles:
+      - tools
+    image: ghcr.io/${GHCR_OWNER:-hongpung}/hongpung-prisma-studio:${APP_IMAGE_TAG:-master}
+    pull_policy: always
+    container_name: hongpung-prisma-studio
+    env_file:
+      - .env.production
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    ports:
+      - '127.0.0.1:5555:5555'
+    restart: 'no'
+
 volumes:
   grafana-data:
   prometheus-data:

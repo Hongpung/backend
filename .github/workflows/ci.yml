@@ -112,3 +112,27 @@ jobs:
           labels: ${{ steps.meta_prom.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Docker metadata (prisma-studio)
+        id: meta_studio
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/hongpung-prisma-studio
+          tags: |
+            type=sha,prefix=sha-
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push prisma-studio image (studio target)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: studio
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta_studio.outputs.tags }}
+          labels: ${{ steps.meta_studio.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
