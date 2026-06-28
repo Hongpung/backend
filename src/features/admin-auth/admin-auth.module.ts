@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { AdminAuthController } from './infrastructure/in/controllers/admin-auth.controller';
 import { AdminAuthService } from './application/admin-auth.service';
 import { AdminAuthCredentialService } from './application/admin-auth-credential.service';
@@ -15,13 +14,7 @@ import { FindAdminEmailsUseCase } from './application/ports/in/find-admin-emails
 import { FindAdminEmailsService } from './application/use-case/find-admin-emails.use-case';
 
 @Module({
-  imports: [
-    JwtModule.register({
-      global: true,
-      secret: process.env.SECRET_KEY,
-    }),
-    PrismaModule,
-  ],
+  imports: [PrismaModule],
   controllers: [AdminAuthController],
   providers: [
     AdminAuthCredentialService,

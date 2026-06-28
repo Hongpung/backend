@@ -1,5 +1,4 @@
 import { Module, OnModuleInit } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { MemberAuthController } from './infrastructure/in/controllers/member-auth.controller';
 import { MemberAuthAdminController } from './infrastructure/in/controllers/member-auth-admin.controller';
 import { MemberAuthVerificationController } from './infrastructure/in/controllers/member-auth-verification.controller';
@@ -38,10 +37,6 @@ import { MemberAuthRefreshTokenHashSecretToken } from './application/tokens/memb
 
 @Module({
   imports: [
-    JwtModule.register({
-      global: true,
-      secret: process.env.SECRET_KEY,
-    }),
     PrismaModule,
     AdminAuthModule,
     MailModule,
