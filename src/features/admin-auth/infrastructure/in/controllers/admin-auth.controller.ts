@@ -13,6 +13,7 @@ import { AdminLoginReqDto } from '../dto/request/login.req.dto';
 import { TokenResDto } from '../dto/response/token.res.dto';
 import { AdminAuthControllerRequestMapper } from './mappers/admin-auth-controller.request.mapper';
 import { AdminAuthControllerResponseMapper } from './mappers/admin-auth-controller.response.mapper';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('관리자 인증 API')
 @Controller('auth/admin')
@@ -23,6 +24,7 @@ export class AdminAuthController {
   ) {}
 
   @Post('login')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({
     summary: '관리자 로그인',
     description: '관리자 계정으로 로그인합니다.',

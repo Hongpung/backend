@@ -19,6 +19,7 @@ import {
   MessageResDto,
   VerifyPasswordVerificationResDto,
 } from '../dto/response';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('검증 API')
 @Controller('verification')
@@ -29,6 +30,7 @@ export class MemberAuthVerificationController {
   ) {}
 
   @Post('send/id')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({
     summary: '이메일 인증 코드 발송',
     description: '이메일 인증 코드를 발송합니다.',
@@ -57,6 +59,7 @@ export class MemberAuthVerificationController {
   }
 
   @Post('verify/id')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({
     summary: '이메일 인증 코드 검증',
     description: '이메일 인증 코드를 검증합니다.',
@@ -79,6 +82,7 @@ export class MemberAuthVerificationController {
   }
 
   @Post('send/password')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({
     summary: '비밀번호 재설정 인증 코드 발송',
     description: '비밀번호 재설정을 위한 인증 코드를 발송합니다.',
@@ -107,6 +111,7 @@ export class MemberAuthVerificationController {
   }
 
   @Post('verify/password')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({
     summary: '비밀번호 재설정 인증 코드 검증',
     description: '비밀번호 재설정을 위한 인증 코드를 검증합니다.',

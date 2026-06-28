@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { BannerModule } from './features/banner/banner.module';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { MemberModule } from './features/member/member.module';
 import { PushNotificationModule } from './features/push-notification/push-notification.module';
 import { ReservationModule } from './features/reservation/reservation.module';
@@ -29,7 +29,7 @@ import { RpcModule } from './infrastructure/rpc/rpc.module';
 import { MailModule } from './infrastructure/mail/mail.module';
 import { LoggerModule } from 'nestjs-pino';
 import { v4 as uuidv4 } from 'uuid';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingInterceptor } from './infrastructure/logging/logging.interceptor';
 import { MetricsModule } from './infrastructure/metrics/metrics.module';
 import { LiveSessionNotificationModule } from './features/live-session-notification/live-session-notification.module';
@@ -83,8 +83,8 @@ import { AiModule } from './features/ai/ai.module';
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: 60,
-        limit: 20,
+        ttl: 60000,
+        limit: 120,
       },
     ]),
     EventModule,
@@ -114,6 +114,7 @@ import { AiModule } from './features/ai/ai.module';
   controllers: [AppController],
   providers: [
     AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
   ],
 })

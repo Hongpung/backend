@@ -35,6 +35,7 @@ import { TokenResDto } from '../dto/response/token.res.dto';
 import { MessageResDto } from '../dto/response/message.res.dto';
 import { MemberAuthControllerRequestMapper } from './mappers/member-auth-controller.request.mapper';
 import { MemberAuthControllerResponseMapper } from './mappers/member-auth-controller.response.mapper';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('회원 인증 API')
 @Controller('auth')
@@ -79,6 +80,7 @@ export class MemberAuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({
     summary: '로그인',
     description: '이메일과 비밀번호로 로그인합니다.',
