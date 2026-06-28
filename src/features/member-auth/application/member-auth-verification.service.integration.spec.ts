@@ -11,7 +11,9 @@ import type { IVerificationCache } from './ports/out/verification-cache.port';
 import type { MemberAuthMailSenderPort } from './ports/out/mail-sender.port';
 import type { VerificationTokenIssuerPort } from './ports/out/verification-token-issuer.port';
 
+const crypto = jest.requireActual<typeof import('crypto')>('crypto');
 const VERIFICATION_CODE_EXPIRATION_TIME = 5 * 60 * 1000;
+const VERIFICATION_COUNT_EXPIRATION_TIME = 60 * 60 * 1000;
 
 class InMemoryVerificationCache implements IVerificationCache {
   private readonly store = new Map<
@@ -74,7 +76,10 @@ describe('MemberAuthVerificationService (통합)', () => {
 
   describe('sendEmailVerificationCode', () => {
     it('발송 후 코드 키와 시도 횟수 키가 캐시에 저장된다', async () => {
-      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
+      const randomSpy = jest
+        .spyOn(crypto, 'randomInt')
+        .mockReturnValue(100000 as never);
+      const setSpy = jest.spyOn(cache, 'set');
 
       await service.sendEmailVerificationCode(email);
 
@@ -88,12 +93,19 @@ describe('MemberAuthVerificationService (통합)', () => {
         email,
         100000,
       );
+      expect(setSpy).toHaveBeenCalledWith(
+        `${email}-email-verification-count`,
+        1,
+        VERIFICATION_COUNT_EXPIRATION_TIME,
+      );
 
       randomSpy.mockRestore();
     });
 
     it('여러 번 발송하면 시도 횟수가 누적된다', async () => {
-      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
+      const randomSpy = jest
+        .spyOn(crypto, 'randomInt')
+        .mockReturnValue(100000 as never);
 
       await service.sendEmailVerificationCode(email);
       await service.sendEmailVerificationCode(email);
@@ -118,20 +130,25 @@ describe('MemberAuthVerificationService (통합)', () => {
   });
 
   describe('verifyEmailVerificationCode', () => {
-    it('email 키에 사전 저장된 코드로 검증에 성공한다', async () => {
-      await cache.set(email, 123456);
+    it('이메일 인증 코드 키에 저장된 코드로 검증에 성공한다', async () => {
+      const codeKey = `${email}-email-verification-code`;
+      await cache.set(codeKey, 123456);
 
       await expect(
         service.verifyEmailVerificationCode({ email, code: '123456' }),
       ).resolves.toEqual({ message: '인증이 완료되었습니다.' });
-      expect(await cache.get<number>(email)).toBeUndefined();
+      expect(await cache.get<number>(codeKey)).toBeUndefined();
     });
 
     it('TTL 만료 후에는 만료 오류를 던진다', async () => {
       jest.useFakeTimers();
       jest.setSystemTime(new Date('2025-01-01T12:00:00.000Z'));
 
-      await cache.set(email, 123456, VERIFICATION_CODE_EXPIRATION_TIME);
+      await cache.set(
+        `${email}-email-verification-code`,
+        123456,
+        VERIFICATION_CODE_EXPIRATION_TIME,
+      );
       jest.advanceTimersByTime(VERIFICATION_CODE_EXPIRATION_TIME + 1);
 
       await expect(
@@ -139,21 +156,22 @@ describe('MemberAuthVerificationService (통합)', () => {
       ).rejects.toThrow('인증 코드가 만료되었습니다.');
     });
 
-    // 프로덕션 버그: send는 `${email}-email-verification-code`에 저장하지만
-    // verify는 `email` 키만 읽는다. 단위 테스트는 verify 전 email 키를 사전 주입한다.
-    it('send 직후 verify는 email 키 불일치로 실패한다 (사전 주입 없음)', async () => {
-      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
+    it('send 직후 동일한 키의 코드로 verify에 성공한다', async () => {
+      const randomSpy = jest
+        .spyOn(crypto, 'randomInt')
+        .mockReturnValue(100000 as never);
 
       await service.sendEmailVerificationCode(email);
 
       expect(
         await cache.get<number>(`${email}-email-verification-code`),
       ).toBe(100000);
-      expect(await cache.get<number>(email)).toBeUndefined();
-
       await expect(
         service.verifyEmailVerificationCode({ email, code: '100000' }),
-      ).rejects.toThrow('인증 코드가 만료되었습니다.');
+      ).resolves.toEqual({ message: '인증이 완료되었습니다.' });
+      expect(
+        await cache.get<number>(`${email}-email-verification-code`),
+      ).toBeUndefined();
 
       randomSpy.mockRestore();
     });
@@ -161,7 +179,10 @@ describe('MemberAuthVerificationService (통합)', () => {
 
   describe('sendPasswordVerificationCode', () => {
     it('발송 후 코드 키와 시도 횟수 키가 캐시에 저장된다', async () => {
-      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+      const randomSpy = jest
+        .spyOn(crypto, 'randomInt')
+        .mockReturnValue(550000 as never);
+      const setSpy = jest.spyOn(cache, 'set');
 
       await service.sendPasswordVerificationCode(passwordEmail);
 
@@ -179,6 +200,11 @@ describe('MemberAuthVerificationService (통합)', () => {
         passwordEmail,
         550000,
       );
+      expect(setSpy).toHaveBeenCalledWith(
+        `${passwordEmail}-password-verification-count`,
+        1,
+        VERIFICATION_COUNT_EXPIRATION_TIME,
+      );
 
       randomSpy.mockRestore();
     });
@@ -194,8 +220,9 @@ describe('MemberAuthVerificationService (통합)', () => {
   });
 
   describe('verifyPasswordVerificationCode', () => {
-    it('email 키에 사전 저장된 코드로 검증에 성공한다', async () => {
-      await cache.set(passwordEmail, 888888);
+    it('비밀번호 인증 코드 키에 저장된 코드로 검증에 성공한다', async () => {
+      const codeKey = `${passwordEmail}-password-verification-code`;
+      await cache.set(codeKey, 888888);
 
       await expect(
         service.verifyPasswordVerificationCode({
@@ -203,7 +230,7 @@ describe('MemberAuthVerificationService (통합)', () => {
           code: '888888',
         }),
       ).resolves.toEqual({ message: '인증이 완료되었습니다.' });
-      expect(await cache.get<number>(passwordEmail)).toBeUndefined();
+      expect(await cache.get<number>(codeKey)).toBeUndefined();
     });
   });
 

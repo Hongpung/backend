@@ -4,6 +4,8 @@ import type { IVerificationCache } from './ports/out/verification-cache.port';
 import type { MemberAuthMailSenderPort } from './ports/out/mail-sender.port';
 import type { VerificationTokenIssuerPort } from './ports/out/verification-token-issuer.port';
 
+const crypto = jest.requireActual<typeof import('crypto')>('crypto');
+
 describe('MemberAuthVerificationService', () => {
   let service: MemberAuthVerificationService;
   let cache: jest.Mocked<IVerificationCache>;
@@ -29,7 +31,9 @@ describe('MemberAuthVerificationService', () => {
 
   it('이메일 인증 코드 발송 후 캐시에 저장하고 시도 횟수를 증가시킨다', async () => {
     cache.get.mockResolvedValue(0 as never);
-    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
+    const randomSpy = jest
+      .spyOn(crypto, 'randomInt')
+      .mockReturnValue(100000 as never);
 
     await service.sendEmailVerificationCode('user@test.com');
 
@@ -48,6 +52,7 @@ describe('MemberAuthVerificationService', () => {
     expect(cache.set).toHaveBeenCalledWith(
       'user@test.com-email-verification-count',
       1,
+      60 * 60 * 1000,
     );
 
     randomSpy.mockRestore();
@@ -71,8 +76,12 @@ describe('MemberAuthVerificationService', () => {
         code: '123456',
       }),
     ).resolves.toEqual({ message: '인증이 완료되었습니다.' });
-    expect(cache.get).toHaveBeenCalledWith('user@test.com');
-    expect(cache.del).toHaveBeenCalledWith('user@test.com');
+    expect(cache.get).toHaveBeenCalledWith(
+      'user@test.com-email-verification-code',
+    );
+    expect(cache.del).toHaveBeenCalledWith(
+      'user@test.com-email-verification-code',
+    );
   });
 
   it('이메일 인증 코드가 만료된 경우 오류를 던진다', async () => {
@@ -111,7 +120,9 @@ describe('MemberAuthVerificationService', () => {
 
   it('비밀번호 변경용 인증 코드를 발송하고 캐시에 저장한다', async () => {
     cache.get.mockResolvedValue(0 as never);
-    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    const randomSpy = jest
+      .spyOn(crypto, 'randomInt')
+      .mockReturnValue(550000 as never);
 
     await service.sendPasswordVerificationCode('pw@test.com');
 
@@ -130,6 +141,7 @@ describe('MemberAuthVerificationService', () => {
     expect(cache.set).toHaveBeenCalledWith(
       'pw@test.com-password-verification-count',
       1,
+      60 * 60 * 1000,
     );
 
     randomSpy.mockRestore();
@@ -153,8 +165,12 @@ describe('MemberAuthVerificationService', () => {
         code: '888888',
       }),
     ).resolves.toEqual({ message: '인증이 완료되었습니다.' });
-    expect(cache.get).toHaveBeenCalledWith('pw@test.com');
-    expect(cache.del).toHaveBeenCalledWith('pw@test.com');
+    expect(cache.get).toHaveBeenCalledWith(
+      'pw@test.com-password-verification-code',
+    );
+    expect(cache.del).toHaveBeenCalledWith(
+      'pw@test.com-password-verification-code',
+    );
   });
 
   it('비밀번호 인증 코드가 만료된 경우 오류를 던진다', async () => {
