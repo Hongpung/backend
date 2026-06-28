@@ -7,6 +7,7 @@ import {
 import { PrismaClient } from '@prisma/client';
 import {
   createMariaDbAdapter,
+  isPrismaQueryLogEnabled,
   prismaQueryLog,
   resolveDatabaseUrl,
 } from './create-prisma-client';
@@ -24,18 +25,18 @@ export class PrismaService
       log: prismaQueryLog,
     });
 
-    this.$on('query', (event) => {
-      this.logger.log(
-        JSON.stringify({
-          type: 'prisma:query',
-          timestamp: new Date().toISOString(),
-          durationMs: event.duration,
-          query: event.query,
-          params: event.params,
-          target: event.target,
-        }),
-      );
-    });
+    if (isPrismaQueryLogEnabled) {
+      this.$on('query', (event) => {
+        this.logger.log(
+          JSON.stringify({
+            type: 'prisma:query',
+            timestamp: new Date().toISOString(),
+            durationMs: event.duration,
+            query: event.query,
+          }),
+        );
+      });
+    }
   }
 
   async onModuleInit() {

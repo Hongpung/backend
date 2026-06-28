@@ -5,8 +5,13 @@ import type { PoolConfig } from 'mariadb';
 /** Node EventEmitter default(10) 초과 시 pool 관련 경고 완화 */
 const DEFAULT_POOL_CONNECTION_LIMIT = 10;
 
+export const isPrismaQueryLogEnabled =
+  process.env.NODE_ENV !== 'production' || process.env.PRISMA_QUERY_LOG === '1';
+
 export const prismaQueryLog: Prisma.LogDefinition[] = [
-  { level: 'query', emit: 'event' },
+  ...(isPrismaQueryLogEnabled
+    ? [{ level: 'query', emit: 'event' } as const]
+    : []),
   { level: 'warn', emit: 'stdout' },
   { level: 'error', emit: 'stdout' },
 ];
