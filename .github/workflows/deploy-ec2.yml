@@ -74,5 +74,5 @@ jobs:
             "set -euo pipefail; \
              cd '${APP_DIR}'; \
              export APP_IMAGE_TAG='${APP_IMAGE_TAG}'; \
-             docker compose up -d --pull always --force-recreate --remove-orphans; \
+             docker compose up -d --pull always --remove-orphans app; \
              docker compose ps"

@@ -1,7 +1,7 @@
 # 빌드: docker compose build app
 # prisma generate + nest build 는 builder 스테이지(Alpine) 안에서 실행
 
-FROM node:22-alpine AS builder
+FROM node:22.23.4-alpine AS builder
 WORKDIR /app
 
 RUN apk add --no-cache openssl
@@ -19,7 +19,7 @@ ENV DATABASE_URL="mysql://build:build@127.0.0.1:3306/build"
 RUN npx prisma generate
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM node:22.23.4-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -41,7 +41,7 @@ CMD ["node", "/app/dist/src/main.js"]
 # ------------------------------------------------------------------------------
 # Prisma Studio (운영 DB 디버그용, compose --profile tools). 빌드: docker build --target studio -t hongpung-prisma-studio .
 # ------------------------------------------------------------------------------
-FROM node:22-alpine AS studio
+FROM node:22.23.4-alpine AS studio
 WORKDIR /app
 
 RUN apk add --no-cache openssl
