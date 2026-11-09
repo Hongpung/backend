@@ -108,9 +108,37 @@ describe('MemberAuthAdminService', () => {
   });
 
   describe('sendSignUpRequestMail', () => {
+    const pendingClubA = {
+      memberId: 1,
+      email: 'u@test.com',
+      name: 'U',
+      nickname: 'n',
+      clubId: 10,
+      clubName: 'C',
+      enrollmentNumber: '01',
+    };
+    const pendingClubB = {
+      memberId: 2,
+      email: 'u2@test.com',
+      name: 'U2',
+      nickname: 'n2',
+      clubId: 20,
+      clubName: 'D',
+      enrollmentNumber: '02',
+    };
+    const pendingNoClub = {
+      memberId: 3,
+      email: 'u3@test.com',
+      name: 'U3',
+      nickname: null,
+      clubId: null,
+      clubName: null,
+      enrollmentNumber: '03',
+    };
+
     it('대기 회원 수가 0이면 신청 알림 메일을 보내지 않는다', async () => {
       adminLookup.findAdminEmails.mockResolvedValue([
-        { email: 'admin1@test.com' },
+        { email: 'admin1@test.com', adminLevel: 'SUPER', clubId: null },
       ]);
       memberAuthRepository.findPendingSignupIds.mockResolvedValue([]);
 
@@ -119,55 +147,43 @@ describe('MemberAuthAdminService', () => {
       expect(mailSender.sendSignUpRequestedMail).not.toHaveBeenCalled();
     });
 
-    it('대기 회원 수가 있으면 모든 관리자 이메일로 알림을 보낸다', async () => {
+    it('SUPER는 전체 대기 건수를, SUB는 자기 동아리 대기 건수만 받는다', async () => {
       adminLookup.findAdminEmails.mockResolvedValue([
-        { email: 'a1@test.com' },
-        { email: 'a2@test.com' },
+        { email: 'super@test.com', adminLevel: 'SUPER', clubId: null },
+        { email: 'sub-a@test.com', adminLevel: 'SUB', clubId: 10 },
+        { email: 'sub-b@test.com', adminLevel: 'SUB', clubId: 20 },
+        { email: 'sub-none@test.com', adminLevel: 'SUB', clubId: null },
+        { email: 'sub-empty@test.com', adminLevel: 'SUB', clubId: 30 },
       ]);
       memberAuthRepository.findPendingSignupIds.mockResolvedValue([
-        {
-          memberId: 1,
-          email: 'u@test.com',
-          name: 'U',
-          nickname: 'n',
-          clubName: 'C',
-          enrollmentNumber: '01',
-        },
-        {
-          memberId: 2,
-          email: 'u2@test.com',
-          name: 'U2',
-          nickname: 'n2',
-          clubName: 'C',
-          enrollmentNumber: '02',
-        },
+        pendingClubA,
+        pendingClubB,
+        pendingNoClub,
       ]);
 
       await service.sendSignUpRequestMail();
 
+      expect(mailSender.sendSignUpRequestedMail).toHaveBeenCalledTimes(3);
       expect(mailSender.sendSignUpRequestedMail).toHaveBeenCalledWith(
-        'a1@test.com',
-        2,
+        'super@test.com',
+        3,
       );
       expect(mailSender.sendSignUpRequestedMail).toHaveBeenCalledWith(
-        'a2@test.com',
-        2,
+        'sub-a@test.com',
+        1,
+      );
+      expect(mailSender.sendSignUpRequestedMail).toHaveBeenCalledWith(
+        'sub-b@test.com',
+        1,
       );
     });
 
     it('메일 전송이 실패해도 예외를 전파하지 않는다', async () => {
       adminLookup.findAdminEmails.mockResolvedValue([
-        { email: 'admin@test.com' },
+        { email: 'admin@test.com', adminLevel: 'SUPER', clubId: null },
       ]);
       memberAuthRepository.findPendingSignupIds.mockResolvedValue([
-        {
-          memberId: 1,
-          email: 'u@test.com',
-          name: 'U',
-          nickname: 'n',
-          clubName: 'C',
-          enrollmentNumber: '01',
-        },
+        pendingClubA,
       ]);
       mailSender.sendSignUpRequestedMail.mockRejectedValue(
         new Error('SMTP error'),

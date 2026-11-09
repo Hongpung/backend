@@ -53,8 +53,26 @@ describeIntegration('MemberAuthAdminService (통합)', () => {
     adminLookup = {
       verifyAdminPassword: jest.fn(async () => true),
       findAdminEmails: jest.fn(async () => [
-        { email: `admin-a-${runId}@integration.test` },
-        { email: `admin-b-${runId}@integration.test` },
+        {
+          email: `admin-super-${runId}@integration.test`,
+          adminLevel: 'SUPER' as const,
+          clubId: null,
+        },
+        {
+          email: `admin-sub-a-${runId}@integration.test`,
+          adminLevel: 'SUB' as const,
+          clubId: testClubId,
+        },
+        {
+          email: `admin-sub-b-${runId}@integration.test`,
+          adminLevel: 'SUB' as const,
+          clubId: testClubBId,
+        },
+        {
+          email: `admin-sub-none-${runId}@integration.test`,
+          adminLevel: 'SUB' as const,
+          clubId: null,
+        },
       ]),
     };
 
@@ -317,26 +335,38 @@ describeIntegration('MemberAuthAdminService (통합)', () => {
       spy.mockRestore();
     });
 
-    it('PENDING이 있으면 모든 관리자에게 요청 메일을 보낸다', async () => {
+    it('SUPER는 전체 대기 건수를, SUB는 자기 동아리 대기 건수만 받는다', async () => {
       mailSender.sendSignUpRequestedMail.mockClear();
 
       await service.sendSignUpRequestMail();
 
-      const pendingCount = (
-        await new MemberAuthPrismaRepository(
-          prisma as unknown as PrismaService,
-        ).findPendingSignupIds()
+      const pending = await new MemberAuthPrismaRepository(
+        prisma as unknown as PrismaService,
+      ).findPendingSignupIds();
+      const clubACount = pending.filter(
+        (row) => row.clubId === testClubId,
+      ).length;
+      const clubBCount = pending.filter(
+        (row) => row.clubId === testClubBId,
       ).length;
 
-      expect(pendingCount).toBeGreaterThanOrEqual(seededPendingIds().length);
-      expect(mailSender.sendSignUpRequestedMail).toHaveBeenCalledTimes(2);
+      expect(pending.length).toBeGreaterThanOrEqual(seededPendingIds().length);
+      expect(mailSender.sendSignUpRequestedMail).toHaveBeenCalledTimes(3);
       expect(mailSender.sendSignUpRequestedMail).toHaveBeenCalledWith(
-        `admin-a-${runId}@integration.test`,
-        expect.any(Number),
+        `admin-super-${runId}@integration.test`,
+        pending.length,
       );
       expect(mailSender.sendSignUpRequestedMail).toHaveBeenCalledWith(
-        `admin-b-${runId}@integration.test`,
-        expect.any(Number),
+        `admin-sub-a-${runId}@integration.test`,
+        clubACount,
+      );
+      expect(mailSender.sendSignUpRequestedMail).toHaveBeenCalledWith(
+        `admin-sub-b-${runId}@integration.test`,
+        clubBCount,
+      );
+      expect(mailSender.sendSignUpRequestedMail).not.toHaveBeenCalledWith(
+        `admin-sub-none-${runId}@integration.test`,
+        expect.anything(),
       );
     });
   });

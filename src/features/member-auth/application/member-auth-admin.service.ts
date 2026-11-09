@@ -85,27 +85,54 @@ export class MemberAuthAdminService implements MemberAuthAdminUseCasePort {
   }
 
   async sendSignUpRequestMail(): Promise<void> {
-    const adminEmails = await this.adminLookup.findAdminEmails();
-    const pendingSignupCount = (
-      await this.memberAuthRepository.findPendingSignupIds()
-    ).length;
+    const [admins, pendingSignups] = await Promise.all([
+      this.adminLookup.findAdminEmails(),
+      this.memberAuthRepository.findPendingSignupIds(),
+    ]);
 
-    if (pendingSignupCount > 0) {
-      await Promise.all(
-        adminEmails.map(async ({ email }) => {
-          try {
-            await this.mailSender.sendSignUpRequestedMail(
-              email,
-              pendingSignupCount,
-            );
-          } catch (error) {
-            this.logger.error(
-              `메일 전송 실패: ${email}, 에러: ${(error as Error).message}`,
-            );
-          }
-        }),
+    if (pendingSignups.length === 0) {
+      return;
+    }
+
+    const pendingCountByClubId = new Map<number, number>();
+    for (const signup of pendingSignups) {
+      if (signup.clubId == null) {
+        continue;
+      }
+      pendingCountByClubId.set(
+        signup.clubId,
+        (pendingCountByClubId.get(signup.clubId) ?? 0) + 1,
       );
     }
+
+    const recipients = admins.flatMap((admin) => {
+      if (admin.adminLevel === 'SUPER') {
+        return [{ email: admin.email, count: pendingSignups.length }];
+      }
+
+      if (admin.adminLevel !== 'SUB' || admin.clubId == null) {
+        return [];
+      }
+
+      const clubPendingCount = pendingCountByClubId.get(admin.clubId) ?? 0;
+      if (clubPendingCount === 0) {
+        return [];
+      }
+
+      return [{ email: admin.email, count: clubPendingCount }];
+    });
+
+    await Promise.all(
+      recipients.map(async ({ email, count }) => {
+        try {
+          await this.mailSender.sendSignUpRequestedMail(email, count);
+        } catch (error) {
+          this.logger.error(
+            `메일 전송 실패: ${email}, 에러: ${(error as Error).message}`,
+          );
+        }
+      }),
+    );
   }
 
   async forceRemove(params: ForceRemoveParams): Promise<{ message: string }> {
