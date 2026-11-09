@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/infrastructure/prisma/prisma.service';
 import {
   type IMemberAuthRepository,
   type MemberLoginInfo,
+  type PendingSignupRecord,
 } from '../../../application/ports/out/member-auth.repository.port';
 import { MemberAuthPrismaMapper } from './mappers/member-auth.prisma.mapper';
 
@@ -115,74 +117,20 @@ export class MemberAuthPrismaRepository implements IMemberAuthRepository {
     });
   }
 
-  async findPendingSignupIds(): Promise<
-    Array<{
-      memberId: number;
-      email: string;
-      name: string;
-      nickname: string;
-      clubName: string | null;
-      enrollmentNumber: string;
-    }>
-  > {
+  async findPendingSignupIds() {
     const signups = await this.prisma.member.findMany({
       where: { isPermmited: 'PENDING' },
-      select: {
-        memberId: true,
-        email: true,
-        name: true,
-        nickname: true,
-        club: {
-          select: {
-            clubName: true,
-          },
-        },
-        enrollmentNumber: true,
-      },
+      select: pendingSignupSelect,
     });
-    return signups.map((signup) => ({
-      memberId: signup.memberId,
-      email: signup.email,
-      name: signup.name,
-      nickname: signup.nickname,
-      clubName: signup.club?.clubName ?? null,
-      enrollmentNumber: signup.enrollmentNumber,
-    }));
+    return signups.map(toPendingSignupRecord);
   }
 
-  async findPendingSignupIdsByClubId(clubId: number): Promise<
-    Array<{
-      memberId: number;
-      email: string;
-      name: string;
-      nickname: string;
-      clubName: string | null;
-      enrollmentNumber: string;
-    }>
-  > {
+  async findPendingSignupIdsByClubId(clubId: number) {
     const signups = await this.prisma.member.findMany({
       where: { isPermmited: 'PENDING', clubId },
-      select: {
-        memberId: true,
-        email: true,
-        name: true,
-        nickname: true,
-        club: {
-          select: {
-            clubName: true,
-          },
-        },
-        enrollmentNumber: true,
-      },
+      select: pendingSignupSelect,
     });
-    return signups.map((signup) => ({
-      memberId: signup.memberId,
-      email: signup.email,
-      name: signup.name,
-      nickname: signup.nickname,
-      clubName: signup.club?.clubName ?? null,
-      enrollmentNumber: signup.enrollmentNumber,
-    }));
+    return signups.map(toPendingSignupRecord);
   }
 
   async findMembersEmailName(
@@ -194,4 +142,32 @@ export class MemberAuthPrismaRepository implements IMemberAuthRepository {
     });
     return members;
   }
+}
+
+const pendingSignupSelect = {
+  memberId: true,
+  email: true,
+  name: true,
+  nickname: true,
+  clubId: true,
+  club: {
+    select: {
+      clubName: true,
+    },
+  },
+  enrollmentNumber: true,
+} satisfies Prisma.MemberSelect;
+
+function toPendingSignupRecord(
+  signup: Prisma.MemberGetPayload<{ select: typeof pendingSignupSelect }>,
+): PendingSignupRecord {
+  return {
+    memberId: signup.memberId,
+    email: signup.email,
+    name: signup.name,
+    nickname: signup.nickname,
+    clubId: signup.clubId,
+    clubName: signup.club?.clubName ?? null,
+    enrollmentNumber: signup.enrollmentNumber,
+  };
 }

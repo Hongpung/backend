@@ -7,6 +7,16 @@ export interface MemberLoginInfo {
   canLogin: boolean;
 }
 
+export interface PendingSignupRecord {
+  memberId: number;
+  email: string;
+  name: string;
+  nickname: string | null;
+  clubId: number | null;
+  clubName: string | null;
+  enrollmentNumber: string;
+}
+
 export interface IMemberAuthRepository {
   findAuthByEmail(email: string): Promise<MemberAuthEntity | null>;
 
@@ -40,27 +50,9 @@ export interface IMemberAuthRepository {
 
   deleteAuth(memberId: number): Promise<void>;
 
-  findPendingSignupIds(): Promise<
-    Array<{
-      memberId: number;
-      email: string;
-      name: string;
-      nickname: string;
-      clubName: string | null;
-      enrollmentNumber: string;
-    }>
-  >;
+  findPendingSignupIds(): Promise<PendingSignupRecord[]>;
 
-  findPendingSignupIdsByClubId(clubId: number): Promise<
-    Array<{
-      memberId: number;
-      email: string;
-      name: string;
-      nickname: string;
-      clubName: string | null;
-      enrollmentNumber: string;
-    }>
-  >;
+  findPendingSignupIdsByClubId(clubId: number): Promise<PendingSignupRecord[]>;
 
   findMembersEmailName(
     memberIds: number[],
