@@ -33,7 +33,9 @@ describe('MemberAuthAdminLookupAdapter', () => {
   });
 
   it('findAdminEmails를 FindAdminEmailsUseCase에 위임한다', async () => {
-    const emails = [{ email: 'admin@test.com' }];
+    const emails = [
+      { email: 'admin@test.com', adminLevel: 'SUPER' as const, clubId: null },
+    ];
     findAdminEmailsUseCase.findAdminEmails.mockResolvedValue(emails);
 
     await expect(adapter.findAdminEmails()).resolves.toEqual(emails);

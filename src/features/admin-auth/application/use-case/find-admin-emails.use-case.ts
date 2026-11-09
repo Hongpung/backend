@@ -3,7 +3,10 @@ import {
   AdminAuthRepositoryPort,
   type IAdminAuthRepository,
 } from '../ports/out/admin-auth.repository.port';
-import { FindAdminEmailsUseCase } from '../ports/in/find-admin-emails.use-case';
+import {
+  type AdminEmail,
+  FindAdminEmailsUseCase,
+} from '../ports/in/find-admin-emails.use-case';
 
 @Injectable()
 export class FindAdminEmailsService implements FindAdminEmailsUseCase {
@@ -12,7 +15,7 @@ export class FindAdminEmailsService implements FindAdminEmailsUseCase {
     private readonly adminAuthRepository: IAdminAuthRepository,
   ) {}
 
-  async findAdminEmails(): Promise<Array<{ email: string }>> {
+  async findAdminEmails(): Promise<AdminEmail[]> {
     return this.adminAuthRepository.findAdminEmails();
   }
 }

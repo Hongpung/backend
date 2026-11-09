@@ -17,7 +17,10 @@ describe('FindAdminEmailsService', () => {
   });
 
   it('repository.findAdminEmails 결과를 그대로 반환한다', async () => {
-    const emails = [{ email: 'a1@test.com' }, { email: 'a2@test.com' }];
+    const emails = [
+      { email: 'a1@test.com', adminLevel: 'SUPER' as const, clubId: null },
+      { email: 'a2@test.com', adminLevel: 'SUB' as const, clubId: 1 },
+    ];
     adminAuthRepository.findAdminEmails.mockResolvedValue(emails);
 
     await expect(service.findAdminEmails()).resolves.toEqual(emails);

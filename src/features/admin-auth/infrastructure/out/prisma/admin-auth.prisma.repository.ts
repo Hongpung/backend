@@ -35,11 +35,24 @@ export class AdminAuthPrismaRepository implements IAdminAuthRepository {
     return AdminAuthPrismaMapper.toDomainOrNull(admin);
   }
 
-  async findAdminEmails(): Promise<Array<{ email: string }>> {
+  async findAdminEmails() {
     const admins = await this.prisma.member.findMany({
-      where: { adminLevel: { not: null } },
-      select: { email: true },
+      where: { adminLevel: { in: ['SUPER', 'SUB'] } },
+      select: { email: true, adminLevel: true, clubId: true },
     });
-    return admins;
+
+    return admins.flatMap((admin) => {
+      if (admin.adminLevel !== 'SUPER' && admin.adminLevel !== 'SUB') {
+        return [];
+      }
+
+      return [
+        {
+          email: admin.email,
+          adminLevel: admin.adminLevel,
+          clubId: admin.clubId,
+        },
+      ];
+    });
   }
 }

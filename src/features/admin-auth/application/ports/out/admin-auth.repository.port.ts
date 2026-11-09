@@ -1,4 +1,11 @@
+import type { AdminLevel } from 'src/features/admin/domain/admin.type';
 import type { AdminAuthEntity } from '../../../domain/admin-auth.entity';
+
+export type AdminEmailRecord = {
+  email: string;
+  adminLevel: AdminLevel;
+  clubId: number | null;
+};
 
 export const AdminAuthRepositoryPort = Symbol('AdminAuthRepositoryPort');
 
@@ -12,5 +19,5 @@ export interface IAdminAuthRepository {
 
   findAdminByMemberId(memberId: number): Promise<AdminAuthEntity | null>;
 
-  findAdminEmails(): Promise<Array<{ email: string }>>;
+  findAdminEmails(): Promise<AdminEmailRecord[]>;
 }

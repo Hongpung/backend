@@ -133,13 +133,21 @@ describeIntegration('AdminAuthPrismaRepository (통합)', () => {
       const result = await repository.findAdminEmails();
       const scoped = result.filter((row) => runIdEmailFilter(row.email));
 
+      expect(scoped).toEqual(
+        expect.arrayContaining([
+          {
+            email: superAdminEmail,
+            adminLevel: 'SUPER',
+            clubId: null,
+          },
+          {
+            email: subAdminEmail,
+            adminLevel: 'SUB',
+            clubId: null,
+          },
+        ]),
+      );
       expect(scoped).toHaveLength(2);
-      expect(scoped.map((row) => row.email).sort()).toEqual(
-        [superAdminEmail, subAdminEmail].sort(),
-      );
-      expect(scoped.every((row) => Object.keys(row).sort().join() === 'email')).toBe(
-        true,
-      );
     });
 
     it('일반 회원(adminLevel null) 이메일은 결과에 포함하지 않는다', async () => {
