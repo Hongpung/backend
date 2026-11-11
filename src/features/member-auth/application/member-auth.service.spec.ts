@@ -19,6 +19,7 @@ import {
 } from '../domain/member-refresh-token-hash';
 import { RefreshTokenRotationFailedError } from '../domain/member-refresh-token-rotation.error';
 import type { IMemberAuthClearPushToken } from './ports/out/member-auth-clear-push-token.port';
+import type { MemberAuthAdminUseCasePort } from './ports/in/member-auth-admin.use-case.port';
 
 jest.mock('bcrypt');
 
@@ -33,6 +34,7 @@ jest.mock('../domain/member-refresh-token-hash', () => ({
 
 describe('MemberAuthService', () => {
   let service: MemberAuthService;
+  let notify: jest.MockedFunction<() => Promise<void>>;
   let repository: jest.Mocked<IMemberAuthRepository>;
   let sessionRepository: jest.Mocked<IMemberAuthSessionRepository>;
   let domainEvents: jest.Mocked<IMemberAuthDomainEventsPublisher>;
@@ -57,6 +59,7 @@ describe('MemberAuthService', () => {
   >;
 
   beforeEach(() => {
+    notify = jest.fn(async () => undefined);
     compareMock.mockClear();
     hashMock.mockClear();
     mockGenRefresh.mockClear().mockReturnValue('opaque-refresh');
@@ -109,6 +112,9 @@ describe('MemberAuthService', () => {
       domainEvents,
       'secret',
       clearPushToken as unknown as IMemberAuthClearPushToken,
+      {
+        sendSignUpRequestMail: notify,
+      } as unknown as MemberAuthAdminUseCasePort,
     );
   });
 
@@ -506,6 +512,39 @@ describe('MemberAuthService', () => {
         clubId: 1,
         nickname: 'nick',
       });
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(repository.signup.mock.invocationCallOrder[0]).toBeLessThan(
+        notify.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('가입 저장이 실패하면 알림을 보내지 않는다', async () => {
+      hashMock.mockResolvedValue('hashed');
+      repository.signup.mockRejectedValue(new Error('저장 실패'));
+
+      await expect(
+        service.signup({
+          email: 'n@test.com',
+          password: 'p',
+          name: 'N',
+          enrollmentNumber: '01',
+        }),
+      ).rejects.toThrow('저장 실패');
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it('알림 처리 실패가 가입 성공을 방해하지 않는다', async () => {
+      hashMock.mockResolvedValue('hashed');
+      notify.mockRejectedValue(new Error('알림 실패'));
+
+      await expect(
+        service.signup({
+          email: 'n@test.com',
+          password: 'p',
+          name: 'N',
+          enrollmentNumber: '01',
+        }),
+      ).resolves.toEqual({ message: 'SignUp Success' });
     });
   });
 

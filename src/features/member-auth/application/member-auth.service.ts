@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   Inject,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
 import { MemberAuthUseCasePort } from './ports/in/member-auth.use-case.port';
+import { MemberAuthAdminUseCasePort } from './ports/in/member-auth-admin.use-case.port';
 import {
   MemberAuthRepositoryPort,
   type IMemberAuthRepository,
@@ -38,6 +40,8 @@ const ACCESS_TOKEN_EXPIRES_IN = '15m';
 
 @Injectable()
 export class MemberAuthService implements MemberAuthUseCasePort {
+  private readonly logger = new Logger(MemberAuthService.name);
+
   constructor(
     private readonly jwtService: JwtService,
     @Inject(MemberAuthRepositoryPort)
@@ -50,6 +54,8 @@ export class MemberAuthService implements MemberAuthUseCasePort {
     private readonly refreshTokenHashSecret: string,
     @Inject(MemberAuthClearPushTokenPort)
     private readonly clearPushToken: IMemberAuthClearPushToken,
+    @Inject(MemberAuthAdminUseCasePort)
+    private readonly adminUseCase: MemberAuthAdminUseCasePort,
   ) {}
 
   private normalizeMemberId(memberId: unknown): number {
@@ -102,6 +108,12 @@ export class MemberAuthService implements MemberAuthUseCasePort {
       clubId,
       nickname,
     });
+
+    try {
+      await this.adminUseCase.sendSignUpRequestMail();
+    } catch (error) {
+      this.logger.error('가입 요청 알림 처리 실패', error);
+    }
 
     return { message: 'SignUp Success' };
   }

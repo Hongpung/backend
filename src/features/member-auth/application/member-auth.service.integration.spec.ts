@@ -22,6 +22,7 @@ import {
 } from '../../../../test/prisma/integration-test-database';
 import type { PrismaService } from 'src/infrastructure/prisma/prisma.service';
 import { MemberAuthService } from './member-auth.service';
+import type { MemberAuthAdminUseCasePort } from './ports/in/member-auth-admin.use-case.port';
 import { MemberAuthPrismaRepository } from '../infrastructure/out/prisma/member-auth.prisma.repository';
 import { MemberAuthSessionPrismaRepository } from '../infrastructure/out/prisma/member-auth-session.prisma.repository';
 import type { IMemberAuthDomainEventsPublisher } from './ports/out/member-auth-domain-events.publisher.port';
@@ -41,6 +42,9 @@ const describeIntegration = isIntegrationDatabaseConfigured()
 
 const REFRESH_HASH_SECRET = 'integration-test-refresh-hash-secret';
 const DEVICE_ID = '550e8400-e29b-41d4-a716-446655440000';
+const adminUseCase = {
+  sendSignUpRequestMail: async () => undefined,
+} as MemberAuthAdminUseCasePort;
 
 describeIntegration('MemberAuthService (통합)', () => {
   let prisma: PrismaClient;
@@ -83,6 +87,7 @@ describeIntegration('MemberAuthService (통합)', () => {
       domainEvents,
       REFRESH_HASH_SECRET,
       clearPushToken as unknown as IMemberAuthClearPushToken,
+      adminUseCase,
     );
 
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
@@ -709,6 +714,7 @@ describeIntegration('MemberAuthService (통합)', () => {
         domainEvents,
         REFRESH_HASH_SECRET,
         failingClearPushToken as unknown as IMemberAuthClearPushToken,
+        adminUseCase,
       );
 
       const login = await serviceWithFailingClear.login({
@@ -764,6 +770,7 @@ describeIntegration('MemberAuthService (통합)', () => {
         domainEvents,
         REFRESH_HASH_SECRET,
         clearPushTokenAdapter,
+        adminUseCase,
       );
 
       await prisma.member.update({
