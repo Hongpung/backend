@@ -89,7 +89,7 @@ export class SessionLogQueryService implements SessionLogQueryUseCasePort {
     month: number,
   ): { startDate: Date; endDate: Date } {
     const monthPadded = String(month).padStart(2, '0');
-    const lastDay = new Date(year, month, 0).getDate();
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
     const startYmd = `${year}-${monthPadded}-01`;
     const endYmd = `${year}-${monthPadded}-${String(lastDay).padStart(2, '0')}`;
     return {

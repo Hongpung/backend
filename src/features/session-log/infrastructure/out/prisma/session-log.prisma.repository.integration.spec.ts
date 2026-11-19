@@ -521,6 +521,29 @@ describeIntegration('SessionLogPrismaRepository (통합)', () => {
       expect(inMonth.date).toBe('2031-06-15');
     });
 
+    it('해당 월 1일과 말일은 포함하고 인접 월 말일·1일은 제외한다', async () => {
+      await persistAndTrack({
+        date: AppKstDateTime.dateFormmatForDB('2031-05-31'),
+      });
+      await persistAndTrack({
+        date: AppKstDateTime.dateFormmatForDB('2031-06-01'),
+      });
+      await persistAndTrack({
+        date: AppKstDateTime.dateFormmatForDB('2031-06-30'),
+      });
+      await persistAndTrack({
+        date: AppKstDateTime.dateFormmatForDB('2031-07-01'),
+      });
+
+      const calendar = await queryRepo.findAdminSessionCalendarForMonth(2031, 6);
+      const dates = calendar.map((row) => row.date);
+
+      expect(dates).toContain('2031-06-01');
+      expect(dates).toContain('2031-06-30');
+      expect(dates).not.toContain('2031-05-31');
+      expect(dates).not.toContain('2031-07-01');
+    });
+
     it('세션이 없는 월이면 빈 배열을 반환한다', async () => {
       const calendar = await queryRepo.findAdminSessionCalendarForMonth(2031, 8);
       expect(calendar).toEqual([]);

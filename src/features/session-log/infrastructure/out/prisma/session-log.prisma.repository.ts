@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { AppKstDateTime } from 'src/common/time-format/app-kst-datetime';
 import { PrismaService } from 'src/infrastructure/prisma/prisma.service';
 import {
   MemberClubId,
@@ -138,8 +139,14 @@ export class SessionLogPrismaRepository implements SessionLogRepositoryPort {
     year: number,
     month: number,
   ): Promise<AdminSessionCalendarDayReadModel[]> {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
+    const monthPadded = String(month).padStart(2, '0');
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const startDate = AppKstDateTime.dateFormmatForDB(
+      `${year}-${monthPadded}-01`,
+    );
+    const endDate = AppKstDateTime.dateFormmatForDB(
+      `${year}-${monthPadded}-${String(lastDay).padStart(2, '0')}`,
+    );
 
     const grouped = await this.prisma.session.groupBy({
       by: ['date'],

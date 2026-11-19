@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
+import { AppKstDateTime } from 'src/common/time-format/app-kst-datetime';
 import { AdminSessionLogQueryService } from './admin-session-log-query.service';
 import type { SessionLogRepositoryPort } from './ports/out/session-log.repository.port';
 import type {
@@ -125,7 +126,7 @@ describe('AdminSessionLogQueryService', () => {
       const result = await service.getAdminSessionLogsByDate('2026-06-10');
 
       expect(repository.findAdminSessionLogsByDate).toHaveBeenCalledWith(
-        new Date('2026-06-10'),
+        AppKstDateTime.dateFormmatForDB('2026-06-10'),
       );
       expect(result).toHaveLength(1);
       expect(result[0].sessionId).toBe(3);

@@ -5,6 +5,7 @@ import type {
   AdminSessionCalendarDayReadModel,
   AdminSessionLogDetailReadModel,
 } from '../domain/read-models/admin-session-log.read-model';
+import { AppKstDateTime } from 'src/common/time-format/app-kst-datetime';
 import {
   assertMonthNumber,
   assertPositiveInteger,
@@ -42,6 +43,8 @@ export class AdminSessionLogQueryService
   async getAdminSessionLogsByDate(
     dateString: string,
   ): Promise<AdminSessionLogDetailReadModel[]> {
-    return this.repository.findAdminSessionLogsByDate(new Date(dateString));
+    return this.repository.findAdminSessionLogsByDate(
+      AppKstDateTime.dateFormmatForDB(dateString),
+    );
   }
 }
