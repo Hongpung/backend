@@ -5,6 +5,7 @@ import {
   ReservationRepositoryPort,
   IReservationRepository,
 } from 'src/features/reservation/application/ports/out/reservation.repository.port';
+import { AppKstDateTime } from 'src/common/time-format/app-kst-datetime';
 import { ReservationEntity } from 'src/features/reservation/domain/entities/reservation.entity';
 
 @QueryHandler(GetReservationsByDateQuery)
@@ -21,7 +22,7 @@ export class GetReservationsByDateHandler
   ): Promise<ReservationEntity[]> {
     const { dateString } = query;
 
-    const date = new Date(dateString);
+    const date = AppKstDateTime.dateFormmatForDB(dateString);
 
     const reservations = await this.repository.findReservationsByDate(date);
 

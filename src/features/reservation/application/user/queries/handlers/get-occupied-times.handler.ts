@@ -1,6 +1,7 @@
 ﻿import { QueryHandler, IQueryHandler } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { GetOccupiedTimesQuery } from '../get-occupied-times.query';
+import { AppKstDateTime } from 'src/common/time-format/app-kst-datetime';
 import {
   OccupiedTimeReadModel,
   ReservationRepositoryPort,
@@ -21,7 +22,7 @@ export class GetOccupiedTimesHandler
   ): Promise<OccupiedTimeReadModel[]> {
     const { dateString } = query;
 
-    const date = new Date(dateString);
+    const date = AppKstDateTime.dateFormmatForDB(dateString);
 
     const occupiedTimes = await this.repository.findOccupiedTimesByDate(date);
 

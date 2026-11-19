@@ -22,8 +22,7 @@ export class GetUserNextReservationsHandler
   ): Promise<ReservationEntity[]> {
     const { memberId, skip } = query;
 
-    const today = new Date();
-    const todayFormatted = AppKstDateTime.dateFormmatForDB(today);
+    const todayFormatted = AppKstDateTime.todayDateAnchorForDb();
     const take = 10; // 페이지당 10개
 
     const reservations = await this.repository.findNextReservationsByMemberId(
